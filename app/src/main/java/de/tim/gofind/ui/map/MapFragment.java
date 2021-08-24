@@ -14,9 +14,12 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import de.tim.gofind.databinding.FragmentMapBinding;
 
@@ -41,8 +44,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, Locatio
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-
-
         return root;
     }
 
@@ -64,7 +65,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, Locatio
         if (ActivityCompat.checkSelfPermission(getLayoutInflater().getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getLayoutInflater().getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
+
+        LatLng basel = new LatLng(47.55963623772201, 7.588694683884673);
+
         mMap.setMyLocationEnabled(true);
+
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(basel, 12));
     }
 
     @Override
