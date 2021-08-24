@@ -1,9 +1,11 @@
 package de.tim.gofind.ui.home;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -14,6 +16,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import de.tim.gofind.R;
 import de.tim.gofind.databinding.FragmentHomeBinding;
+import de.tim.gofind.ui.ar.SharedCameraActivity;
 
 public class HomeFragment extends Fragment {
 
@@ -22,11 +25,20 @@ public class HomeFragment extends Fragment {
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        homeViewModel =
-                new ViewModelProvider(this).get(HomeViewModel.class);
+        homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
 
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
+
+        Button arButton = binding.arcoreButton;
+        arButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getContext(), SharedCameraActivity.class);
+                startActivity(intent);
+
+            }
+        });
 
         final TextView textView = binding.textHome;
         homeViewModel.getText().observe(getViewLifecycleOwner(), new Observer<String>() {
