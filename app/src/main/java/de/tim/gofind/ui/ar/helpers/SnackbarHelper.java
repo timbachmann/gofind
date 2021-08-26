@@ -18,7 +18,6 @@ package de.tim.gofind.ui.ar.helpers;
 import android.app.Activity;
 import android.view.View;
 import android.widget.TextView;
-
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 

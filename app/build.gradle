@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.openapi.generator' version '5.1.1'
+
 }
 
 android {
@@ -29,11 +30,6 @@ android {
     buildFeatures {
         viewBinding true
     }
-    sourceSets {
-        main {
-            java.srcDirs = ["$buildDir/android-client/src/main/java", "$rootDir/app/src/main/java"]
-        }
-    }
 }
 
 dependencies {
@@ -46,8 +42,8 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1'
     implementation 'androidx.navigation:navigation-fragment:2.3.5'
     implementation 'androidx.navigation:navigation-ui:2.3.5'
-    implementation 'com.google.android.gms:play-services-maps:17.0.0'
-    testImplementation 'junit:junit:4.+'
+    implementation 'com.google.android.gms:play-services-maps:17.0.1'
+    testImplementation 'junit:junit:4.13.2'
     implementation 'de.javagl:obj:0.2.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
@@ -57,15 +53,22 @@ dependencies {
 openApiGenerate {
     generatorName = "android"
     inputSpec = "$rootDir/app/src/main/res/config.json".toString()
-    outputDir = "$buildDir/android-client".toString()
+    outputDir = "$rootDir/cineast-client".toString()
+    configOptions = [
+            useAndroidMavenGradlePlugin:"false",
+            compileSdk:"31",
+            minSdk:"29",
+            targetSdk:"31",
+            androidGradleVersion:"7.0.2",
+            androidBuildToolsVersion:"31"
+    ]
+
 }
 
-openApiValidate {
-    inputSpec = "$rootDir/app/src/main/res/specs/config.json".toString()
-    recommend = true
-}
-
-openApiMeta {
-    generatorName = "android"
-    packageName = "de.tim.gofind"
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()
+    }
 }

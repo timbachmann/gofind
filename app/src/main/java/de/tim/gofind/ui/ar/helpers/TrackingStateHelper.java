@@ -17,7 +17,6 @@ package de.tim.gofind.ui.ar.helpers;
 
 import android.app.Activity;
 import android.view.WindowManager;
-
 import com.google.ar.core.Camera;
 import com.google.ar.core.TrackingFailureReason;
 import com.google.ar.core.TrackingState;
