@@ -7,19 +7,19 @@
 
     <fragment
         android:id="@+id/navigation_home"
-        android:name="de.tim.gofind.ui.search.SearchFragment"
+        android:name="de.tim.gofind.search.SearchFragment"
         android:label="@string/app_name"
         tools:layout="@layout/fragment_search" />
 
     <fragment
         android:id="@+id/navigation_dashboard"
-        android:name="de.tim.gofind.ui.ar.ARFragment"
+        android:name="de.tim.gofind.ar.ARFragment"
         android:label="@string/app_name"
         tools:layout="@layout/fragment_ar" />
 
     <fragment
         android:id="@+id/navigation_notifications"
-        android:name="de.tim.gofind.ui.map.MapFragment"
+        android:name="de.tim.gofind.map.MapFragment"
         android:label="@string/app_name"
         tools:layout="@layout/fragment_map" />
 </navigation>

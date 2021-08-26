@@ -39,9 +39,15 @@
         </activity>
 
         <activity
-            android:name=".ui.ar.HelloArActivity"
+            android:name=".ar.HelloArActivity"
             android:parentActivityName="de.tim.gofind.MainActivity">
         </activity>
+
+        <service android:name=".utils.LocationService"
+            android:enabled="true"
+            android:exported="false"
+            android:label="LocationService"
+            />
         <!--
  "AR Required" app, requires "Google Play Services for AR" (ARCore)
          to be installed, as the app does not include any non-AR features.

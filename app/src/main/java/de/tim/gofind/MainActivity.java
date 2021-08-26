@@ -5,11 +5,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.ar.core.ArCoreApk;
 import com.google.ar.core.Session;
 import com.google.ar.core.exceptions.UnavailableApkTooOldException;
@@ -18,7 +16,6 @@ import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException;
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
 
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -26,8 +23,8 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import de.tim.gofind.databinding.ActivityMainBinding;
-import de.tim.gofind.ui.ar.HelloArActivity;
-import de.tim.gofind.ui.ar.helpers.CameraPermissionHelper;
+import de.tim.gofind.ar.helpers.CameraPermissionHelper;
+import de.tim.gofind.utils.LocationService;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -54,13 +51,8 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(binding.navView, navController);
 
-        binding.arFab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent arIntent = new Intent(MainActivity.this, HelloArActivity.class);
-                startActivity(arIntent);
-            }
-        });
+        Intent locationService = new Intent(this, LocationService.class);
+        startService(locationService);
     }
 
     private void checkArCompatibility() {
