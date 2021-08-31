@@ -23,15 +23,6 @@ public class SimilarityQuery {
   
   @SerializedName("containers")
   private List<QueryComponent> containers = null;
-  @SerializedName("config")
-  private QueryConfig config = null;
-  @SerializedName("components")
-  private List<QueryComponent> components = null;
-  public enum MessageTypeEnum {
-     PING,  Q_SIM,  Q_MLT,  Q_NESEG,  Q_SEG,  M_LOOKUP,  Q_TEMPORAL,  SESSION_START,  QR_START,  QR_END,  QR_ERROR,  QR_OBJECT,  QR_METADATA_O,  QR_METADATA_S,  QR_SEGMENT,  QR_SIMILARITY, 
-  };
-  @SerializedName("messageType")
-  private MessageTypeEnum messageType = null;
 
   /**
    **/
@@ -41,36 +32,6 @@ public class SimilarityQuery {
   }
   public void setContainers(List<QueryComponent> containers) {
     this.containers = containers;
-  }
-
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  public QueryConfig getConfig() {
-    return config;
-  }
-  public void setConfig(QueryConfig config) {
-    this.config = config;
-  }
-
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  public List<QueryComponent> getComponents() {
-    return components;
-  }
-  public void setComponents(List<QueryComponent> components) {
-    this.components = components;
-  }
-
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  public MessageTypeEnum getMessageType() {
-    return messageType;
-  }
-  public void setMessageType(MessageTypeEnum messageType) {
-    this.messageType = messageType;
   }
 
 
@@ -83,19 +44,13 @@ public class SimilarityQuery {
       return false;
     }
     SimilarityQuery similarityQuery = (SimilarityQuery) o;
-    return (this.containers == null ? similarityQuery.containers == null : this.containers.equals(similarityQuery.containers)) &&
-        (this.config == null ? similarityQuery.config == null : this.config.equals(similarityQuery.config)) &&
-        (this.components == null ? similarityQuery.components == null : this.components.equals(similarityQuery.components)) &&
-        (this.messageType == null ? similarityQuery.messageType == null : this.messageType.equals(similarityQuery.messageType));
+    return (this.containers == null ? similarityQuery.containers == null : this.containers.equals(similarityQuery.containers));
   }
 
   @Override
   public int hashCode() {
     int result = 17;
     result = 31 * result + (this.containers == null ? 0: this.containers.hashCode());
-    result = 31 * result + (this.config == null ? 0: this.config.hashCode());
-    result = 31 * result + (this.components == null ? 0: this.components.hashCode());
-    result = 31 * result + (this.messageType == null ? 0: this.messageType.hashCode());
     return result;
   }
 
@@ -105,9 +60,6 @@ public class SimilarityQuery {
     sb.append("class SimilarityQuery {\n");
     
     sb.append("  containers: ").append(containers).append("\n");
-    sb.append("  config: ").append(config).append("\n");
-    sb.append("  components: ").append(components).append("\n");
-    sb.append("  messageType: ").append(messageType).append("\n");
     sb.append("}\n");
     return sb.toString();
   }

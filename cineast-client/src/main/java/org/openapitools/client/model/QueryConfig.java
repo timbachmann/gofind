@@ -22,8 +22,8 @@ public class QueryConfig {
   
   @SerializedName("queryId")
   private UUID queryId = null;
-  public enum Set&lt;HintsEnum&gt; {
-     exact,  inexact,  lsh,  ecp,  mi,  pq,  sh,  va,  vaf,  vav,  sequential,  empirical, 
+  public enum HintsEnum {
+     exact,  inexact,  lsh,  ecp,  mi,  pq,  sh,  va,  vaf,  vav,  sequential,  empirical,
   };
   @SerializedName("hints")
   private Set<HintsEnum> hints = null;

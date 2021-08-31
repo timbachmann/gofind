@@ -19,28 +19,12 @@ import com.google.gson.annotations.SerializedName;
 
 @ApiModel(description = "")
 public class OptionallyFilteredIdList {
-  
-  @SerializedName("filters")
-  private List<AbstractMetadataFilterDescriptor> filters = null;
+
   @SerializedName("ids")
   private List<String> ids = null;
-  @SerializedName("idList")
-  private List<String> idList = null;
   public enum MessageTypeEnum {
      PING,  Q_SIM,  Q_MLT,  Q_NESEG,  Q_SEG,  M_LOOKUP,  Q_TEMPORAL,  SESSION_START,  QR_START,  QR_END,  QR_ERROR,  QR_OBJECT,  QR_METADATA_O,  QR_METADATA_S,  QR_SEGMENT,  QR_SIMILARITY, 
   };
-  @SerializedName("messageType")
-  private MessageTypeEnum messageType = null;
-
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  public List<AbstractMetadataFilterDescriptor> getFilters() {
-    return filters;
-  }
-  public void setFilters(List<AbstractMetadataFilterDescriptor> filters) {
-    this.filters = filters;
-  }
 
   /**
    **/
@@ -52,27 +36,6 @@ public class OptionallyFilteredIdList {
     this.ids = ids;
   }
 
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  public List<String> getIdList() {
-    return idList;
-  }
-  public void setIdList(List<String> idList) {
-    this.idList = idList;
-  }
-
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  public MessageTypeEnum getMessageType() {
-    return messageType;
-  }
-  public void setMessageType(MessageTypeEnum messageType) {
-    this.messageType = messageType;
-  }
-
-
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -82,19 +45,13 @@ public class OptionallyFilteredIdList {
       return false;
     }
     OptionallyFilteredIdList optionallyFilteredIdList = (OptionallyFilteredIdList) o;
-    return (this.filters == null ? optionallyFilteredIdList.filters == null : this.filters.equals(optionallyFilteredIdList.filters)) &&
-        (this.ids == null ? optionallyFilteredIdList.ids == null : this.ids.equals(optionallyFilteredIdList.ids)) &&
-        (this.idList == null ? optionallyFilteredIdList.idList == null : this.idList.equals(optionallyFilteredIdList.idList)) &&
-        (this.messageType == null ? optionallyFilteredIdList.messageType == null : this.messageType.equals(optionallyFilteredIdList.messageType));
+    return (this.ids == null ? optionallyFilteredIdList.ids == null : this.ids.equals(optionallyFilteredIdList.ids));
   }
 
   @Override
   public int hashCode() {
     int result = 17;
-    result = 31 * result + (this.filters == null ? 0: this.filters.hashCode());
     result = 31 * result + (this.ids == null ? 0: this.ids.hashCode());
-    result = 31 * result + (this.idList == null ? 0: this.idList.hashCode());
-    result = 31 * result + (this.messageType == null ? 0: this.messageType.hashCode());
     return result;
   }
 
@@ -102,11 +59,7 @@ public class OptionallyFilteredIdList {
   public String toString()  {
     StringBuilder sb = new StringBuilder();
     sb.append("class OptionallyFilteredIdList {\n");
-    
-    sb.append("  filters: ").append(filters).append("\n");
     sb.append("  ids: ").append(ids).append("\n");
-    sb.append("  idList: ").append(idList).append("\n");
-    sb.append("  messageType: ").append(messageType).append("\n");
     sb.append("}\n");
     return sb.toString();
   }
