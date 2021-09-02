@@ -5,8 +5,13 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera.ar" android:required="true"/>
-    <uses-feature android:glEsVersion="0x00020000" android:required="true"/>
+
+    <uses-feature
+        android:name="android.hardware.camera.ar"
+        android:required="true" />
+    <uses-feature
+        android:glEsVersion="0x00030000"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -16,6 +21,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GoFind"
         android:usesCleartextTraffic="true">
+        <activity
+            android:name=".ar.ARActivity"
+            android:exported="true" />
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").
@@ -38,17 +46,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        <activity
+            android:name=".search.ResultsActivity"
+            android:exported="true"
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".ar.HelloArActivity"
-            android:parentActivityName="de.tim.gofind.MainActivity">
-        </activity>
+            android:parentActivityName=".MainActivity" />
 
-        <service android:name=".utils.LocationService"
+        <service
+            android:name=".utils.LocationService"
             android:enabled="true"
             android:exported="false"
-            android:label="LocationService"
-            />
+            android:label="LocationService" />
         <!--
  "AR Required" app, requires "Google Play Services for AR" (ARCore)
          to be installed, as the app does not include any non-AR features.

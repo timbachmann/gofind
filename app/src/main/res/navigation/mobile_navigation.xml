@@ -3,23 +3,28 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/navigation_home">
+    app:startDestination="@+id/navigation_search">
 
     <fragment
-        android:id="@+id/navigation_home"
+        android:id="@+id/navigation_search"
         android:name="de.tim.gofind.search.SearchFragment"
         android:label="@string/app_name"
-        tools:layout="@layout/fragment_search" />
+        tools:layout="@layout/fragment_search" >
+        <action
+            android:id="@+id/action_navigation_search_to_navigation_map"
+            app:destination="@id/navigation_map" />
+    </fragment>
 
     <fragment
-        android:id="@+id/navigation_dashboard"
-        android:name="de.tim.gofind.ar.ARFragment"
-        android:label="@string/app_name"
-        tools:layout="@layout/fragment_ar" />
-
-    <fragment
-        android:id="@+id/navigation_notifications"
+        android:id="@+id/navigation_map"
         android:name="de.tim.gofind.map.MapFragment"
         android:label="@string/app_name"
-        tools:layout="@layout/fragment_map" />
+        tools:layout="@layout/fragment_map" >
+        <argument
+            android:name="images"
+            app:argType="de.tim.gofind.search.HistoricalImage[]" />
+        <action
+            android:id="@+id/action_navigation_map_to_navigation_search"
+            app:destination="@id/navigation_search" />
+    </fragment>
 </navigation>
