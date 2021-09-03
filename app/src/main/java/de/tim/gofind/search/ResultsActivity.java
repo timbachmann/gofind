@@ -57,6 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import de.tim.gofind.R;
+import de.tim.gofind.ar.ARActivity;
 import de.tim.gofind.databinding.ActivityResultsBinding;
 
 public class ResultsActivity extends AppCompatActivity implements OnMapReadyCallback, Response.ErrorListener, GoogleMap.OnMarkerClickListener {
@@ -242,6 +243,14 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
 
         mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter());
 
+        mMap.setOnInfoWindowClickListener(marker -> {
+
+            Intent intent = new Intent(this, ARActivity.class);
+            intent.putExtra("path", marker.getTitle());
+            startActivity(intent);
+
+        });
+
         for (HistoricalImage image : imageList) {
 
             LatLng latLng = new LatLng(image.getLatitude(), image.getLongitude());
@@ -279,6 +288,8 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
 
     @Override
     public boolean onMarkerClick(final Marker marker) {
+
+
         final Handler handler = new Handler();
         final long start = SystemClock.uptimeMillis();
         final long duration = 1500;
