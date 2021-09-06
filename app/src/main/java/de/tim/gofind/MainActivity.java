@@ -5,12 +5,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.view.Menu;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
+
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
+
+import java.util.Objects;
+
 import de.tim.gofind.databinding.ActivityMainBinding;
 import de.tim.gofind.search.ResultsActivity;
 import de.tim.gofind.utils.LocationService;
@@ -31,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        Objects.requireNonNull(getSupportActionBar()).setElevation(0);
 
         overridePendingTransition(0,0);
 
@@ -54,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
 
         latitudeEdit = binding.latitude;
         longitudeEdit = binding.longitude;
-        Button currentLocation = binding.locationButton;
+        ImageButton currentLocation = binding.locationButton;
         currentLocation.setOnClickListener(view -> {
             if (latitude != 0 && longitude != 0) {
                 latitudeEdit.setText(String.valueOf(latitude));
@@ -79,5 +87,11 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         getLayoutInflater().getContext().unregisterReceiver(mBroadcastReceiver);
         binding = null;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.settings_menu, menu);
+        return true;
     }
 }

@@ -147,7 +147,13 @@ public class ARActivity extends AppCompatActivity /*implements Scene.OnUpdateLis
     @Override
     public void onDestroy() {
         super.onDestroy();
-        getLayoutInflater().getContext().unregisterReceiver(mBroadcastReceiver);
+
+        try {
+            getLayoutInflater().getContext().unregisterReceiver(mBroadcastReceiver);
+        } catch(IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+
         binding = null;
     }
 }

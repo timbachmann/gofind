@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 import de.tim.gofind.R;
 import de.tim.gofind.ar.ARActivity;
@@ -76,6 +77,8 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
 
         de.tim.gofind.databinding.ActivityResultsBinding binding = ActivityResultsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        Objects.requireNonNull(getSupportActionBar()).setElevation(0);
 
         overridePendingTransition(0,0);
 
