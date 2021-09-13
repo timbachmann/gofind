@@ -3,20 +3,31 @@ package de.tim.gofind.search;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
 import android.Manifest;
+import android.app.Dialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.BounceInterpolator;
 import android.view.animation.Interpolator;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -29,7 +40,11 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.shape.CornerFamily;
+import com.google.android.material.shape.MaterialShapeDrawable;
 import com.squareup.picasso.Picasso;
 
 import org.openapitools.client.api.MetadataApi;
@@ -55,11 +70,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 
 import de.tim.gofind.R;
 import de.tim.gofind.ar.ARActivity;
 import de.tim.gofind.databinding.ActivityResultsBinding;
+import de.tim.gofind.utils.LocationService;
 
 public class ResultsActivity extends AppCompatActivity implements OnMapReadyCallback, Response.ErrorListener, GoogleMap.OnMarkerClickListener {
 
@@ -68,8 +83,13 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
     private double longitude;
     private GoogleMap mMap;
     private MapView mapView;
-    private FloatingActionButton searchFab;
+    private LinearLayout bottomSheet;
+    private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
     private final HashMap<String, HistoricalImage> imageMap = new HashMap<>();
+    private BroadcastReceiver mBroadcastReceiver;
+    private EditText latitudeEdit;
+    private EditText longitudeEdit;
+    private MenuItem listMenuItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,13 +98,105 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         de.tim.gofind.databinding.ActivityResultsBinding binding = ActivityResultsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        Objects.requireNonNull(getSupportActionBar()).setElevation(0);
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+
+        MaterialShapeDrawable materialShapeDrawable = (MaterialShapeDrawable)toolbar.getBackground();
+        materialShapeDrawable.setShapeAppearanceModel(materialShapeDrawable.getShapeAppearanceModel()
+                .toBuilder()
+                .setAllCorners(CornerFamily.ROUNDED,104)
+                .build());
+
+        setSupportActionBar(toolbar);
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        //getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
+
+        //getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
 
         overridePendingTransition(0,0);
 
-        Intent intent = getIntent();
-        latitude = intent.getDoubleExtra("latitude", 0);
-        longitude = intent.getDoubleExtra("longitude", 0);
+        listView = binding.resultList;
+
+        mapView = binding.map;
+        mapView.onCreate(savedInstanceState);
+        mapView.getMapAsync(this);
+
+        bottomSheet = findViewById(R.id.bottom_navigation_container);
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+        bottomSheetBehavior.setPeekHeight(toolbar.getHeight());
+
+        bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                if (newState == BottomSheetBehavior.STATE_EXPANDED) {
+                    // do stuff when the drawer is expanded
+                }
+
+                if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
+                    // do stuff when the drawer is collapsed
+                }
+            }
+
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+                // do stuff during the actual drag event for example
+                // animating a background color change based on the offset
+
+                // or for example hidding or showing a fab
+                /*if (slideOffset > 0.2) {
+                    if (searchFab.isShown()) {
+                        searchFab.hide();
+                    }
+                } else if (slideOffset < 0.15) {
+                    if (!searchFab.isShown()) {
+                        searchFab.show();
+                    }
+                }*/
+            }
+        });
+
+
+        Intent locationService = new Intent(this, LocationService.class);
+        startService(locationService);
+
+        mBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if ("LOCATION".equals(action)) {
+                    latitude = intent.getDoubleExtra("Latitude", 0);
+                    longitude = intent.getDoubleExtra("Longitude", 0);
+                }
+            }
+
+        };
+
+        IntentFilter filter = new IntentFilter("LOCATION");
+        getLayoutInflater().getContext().registerReceiver(mBroadcastReceiver, filter);
+
+        latitudeEdit = binding.latitude;
+        longitudeEdit = binding.longitude;
+        ImageButton currentLocation = binding.locationButton;
+        currentLocation.setOnClickListener(view -> {
+            if (latitude != 0 && longitude != 0) {
+                latitudeEdit.setText(String.valueOf(latitude));
+                longitudeEdit.setText(String.valueOf(longitude));
+            }
+        });
+
+        FloatingActionButton fab = binding.searchFab;
+        fab.setOnClickListener(view -> handleSearchClick());
+    }
+
+    private void handleSearchClick() {
+        listMenuItem.setVisible(true);
+
+        bottomSheet.setVisibility(View.INVISIBLE);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
 
         QueryTerm queryTerm = new QueryTerm();
         queryTerm.setCategories(Collections.singletonList("spatialdistance"));
@@ -97,19 +209,11 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         SimilarityQuery similarityQuery = new SimilarityQuery();
         similarityQuery.setContainers(Collections.singletonList(queryComponent));
 
-        listView = binding.resultList;
-
-        mapView = binding.map;
-        mapView.onCreate(savedInstanceState);
-        mapView.getMapAsync(this);
-
-        searchFab = binding.mapFab;
-        searchFab.setOnClickListener(view -> handleSearchClick());
-
         Response.Listener<SimilarityQueryResultBatch> resultBatchListener = this::handleSimilarityQueryResult;
 
         SegmentsApi segmentsApi = new SegmentsApi();
         segmentsApi.findSegmentSimilar(similarityQuery, resultBatchListener, this);
+
     }
 
     private void handleSimilarityQueryResult(SimilarityQueryResultBatch response) {
@@ -261,18 +365,6 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         }
     }
 
-    private void handleSearchClick() {
-        if (mapView.getVisibility() == View.VISIBLE) {
-            mapView.setVisibility(View.INVISIBLE);
-            listView.setVisibility(View.VISIBLE);
-            searchFab.setImageResource(R.drawable.ic_baseline_map_24);
-        } else {
-            mapView.setVisibility(View.VISIBLE);
-            listView.setVisibility(View.INVISIBLE);
-            searchFab.setImageResource(R.drawable.ic_baseline_format_list_bulleted_24);
-        }
-    }
-
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
@@ -386,6 +478,48 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
             } else {
                 titleUi.setText("");
             }
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.settings_menu, menu);
+        menu.getItem(0).setIconTintList(ColorStateList.valueOf(getResources().getColor(R.color.black)));
+        listMenuItem = menu.getItem(1);
+        menu.getItem(1).setIconTintList(ColorStateList.valueOf(getResources().getColor(R.color.black)));
+        menu.getItem(2).setIconTintList(ColorStateList.valueOf(getResources().getColor(R.color.black)));
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_search:
+                if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+                    bottomSheet.setVisibility(View.INVISIBLE);
+                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+                } else {
+                    bottomSheet.setVisibility(View.VISIBLE);
+                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                }
+
+                return true;
+            case R.id.list_display:
+                if (mapView.getVisibility() == View.VISIBLE) {
+                    mapView.setVisibility(View.INVISIBLE);
+                    listView.setVisibility(View.VISIBLE);
+                    item.setIcon(R.drawable.ic_baseline_map_24);
+                } else {
+                    mapView.setVisibility(View.VISIBLE);
+                    listView.setVisibility(View.INVISIBLE);
+                    item.setIcon(R.drawable.ic_baseline_format_list_bulleted_24);
+                }
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
         }
     }
 }
