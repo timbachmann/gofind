@@ -1,8 +1,5 @@
 package de.tim.gofind.search;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,17 +15,15 @@ public class SearchListAdapter extends ArrayAdapter<HistoricalImage> {
 
     private final LayoutInflater inflater;
     private final List<HistoricalImage> historicalImageList;
-    private double latitude;
-    private double longitude;
+    private final double latitude;
+    private final double longitude;
 
     public SearchListAdapter(LayoutInflater inflater, List<HistoricalImage> historicalImageList, double latitude, double longitude) {
-        super(inflater.getContext(), R.layout.list_item, (List<HistoricalImage>) historicalImageList);
-
+        super(inflater.getContext(), R.layout.list_item, historicalImageList);
         this.latitude = latitude;
         this.longitude = longitude;
         this.inflater = inflater;
         this.historicalImageList = historicalImageList;
-
     }
 
     public View getView(int position, View convertView, ViewGroup parent) {
@@ -36,14 +31,12 @@ public class SearchListAdapter extends ArrayAdapter<HistoricalImage> {
 
         if (convertView == null) {
             convertView = inflater.inflate(R.layout.list_item, null);
-
             holder = new ViewHolder();
-            holder.titleText = (TextView) convertView.findViewById(R.id.image_title);
-            holder.dateText = (TextView) convertView.findViewById(R.id.image_date);
-            holder.sourceText = (TextView) convertView.findViewById(R.id.image_source);
-            holder.distanceText = (TextView) convertView.findViewById(R.id.image_distance);
-            holder.imageView = (ImageView) convertView.findViewById(R.id.image_icon);
-
+            holder.titleText = convertView.findViewById(R.id.image_title);
+            holder.dateText = convertView.findViewById(R.id.image_date);
+            holder.sourceText = convertView.findViewById(R.id.image_source);
+            holder.distanceText = convertView.findViewById(R.id.image_distance);
+            holder.imageView = convertView.findViewById(R.id.image_icon);
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();

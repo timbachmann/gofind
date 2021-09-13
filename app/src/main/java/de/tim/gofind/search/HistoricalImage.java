@@ -1,12 +1,6 @@
 package de.tim.gofind.search;
 
-import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.text.style.ParagraphStyle;
-
-public class HistoricalImage implements Parcelable {
+public class HistoricalImage {
 
     private String title;
     private String date;
@@ -28,10 +22,6 @@ public class HistoricalImage implements Parcelable {
         this.path = path;
         this.segmentID = segmentID;
         this.objectID = objectID;
-    }
-
-    public HistoricalImage(Parcel in){
-        readFromParcel(in);
     }
 
     public String getTitle() {
@@ -97,44 +87,4 @@ public class HistoricalImage implements Parcelable {
     public void setObjectID(String objectID) {
         this.objectID = objectID;
     }
-
-    private void readFromParcel(Parcel in) {
-        this.title = in.readString();
-        this.date = in.readString();
-        this.source = in.readString();
-        this.latitude = in.readDouble();
-        this.longitude = in.readDouble();
-        this.path = in.readString();
-        this.segmentID = in.readString();
-        this.objectID = in.readString();
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel parcel, int i) {
-        parcel.writeString(title);
-        parcel.writeString(date);
-        parcel.writeString(source);
-        parcel.writeDouble(latitude);
-        parcel.writeDouble(longitude);
-        parcel.writeString(path);
-        parcel.writeString(segmentID);
-        parcel.writeString(objectID);
-    }
-
-    public static final Parcelable.Creator<HistoricalImage> CREATOR = new Parcelable.Creator<HistoricalImage>() {
-        @Override
-        public HistoricalImage createFromParcel(Parcel source) {
-            return new HistoricalImage(source);
-        }
-
-        @Override
-        public HistoricalImage[] newArray(int size) {
-            return new HistoricalImage[size];
-        }
-    };
 }

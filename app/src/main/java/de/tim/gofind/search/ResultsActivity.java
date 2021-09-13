@@ -30,6 +30,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toolbar;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -40,11 +41,13 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.shape.CornerFamily;
 import com.google.android.material.shape.MaterialShapeDrawable;
+import com.google.android.material.slider.RangeSlider;
 import com.squareup.picasso.Picasso;
 
 import org.openapitools.client.api.MetadataApi;
@@ -76,7 +79,7 @@ import de.tim.gofind.ar.ARActivity;
 import de.tim.gofind.databinding.ActivityResultsBinding;
 import de.tim.gofind.utils.LocationService;
 
-public class ResultsActivity extends AppCompatActivity implements OnMapReadyCallback, Response.ErrorListener, GoogleMap.OnMarkerClickListener {
+public class ResultsActivity extends AppCompatActivity implements OnMapReadyCallback, Response.ErrorListener {
 
     private ListView listView;
     private double latitude;
@@ -84,40 +87,49 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
     private GoogleMap mMap;
     private MapView mapView;
     private LinearLayout bottomSheet;
+    private ActivityResultsBinding binding;
     private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
     private final HashMap<String, HistoricalImage> imageMap = new HashMap<>();
     private BroadcastReceiver mBroadcastReceiver;
     private EditText latitudeEdit;
     private EditText longitudeEdit;
     private MenuItem listMenuItem;
+    private MaterialToolbar toolbar;
+    private androidx.appcompat.widget.Toolbar filterBar;
+    private ImageButton currentLocation;
+    private ImageButton fab;
+    private RangeSlider rangeSlider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        de.tim.gofind.databinding.ActivityResultsBinding binding = ActivityResultsBinding.inflate(getLayoutInflater());
+        binding = ActivityResultsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
-
-        MaterialShapeDrawable materialShapeDrawable = (MaterialShapeDrawable)toolbar.getBackground();
-        materialShapeDrawable.setShapeAppearanceModel(materialShapeDrawable.getShapeAppearanceModel()
-                .toBuilder()
-                .setAllCorners(CornerFamily.ROUNDED,104)
-                .build());
-
+        initializeViews(savedInstanceState);
         setSupportActionBar(toolbar);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-        //getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
-
-        //getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
-
         overridePendingTransition(0,0);
+
+        setUpListeners();
+        startLocationServiceAndBind();
+    }
+
+    private void initializeViews(Bundle savedInstanceState) {
+        toolbar = findViewById(R.id.toolbar);
+        bottomSheet = findViewById(R.id.bottom_navigation_container);
+        filterBar = findViewById(R.id.filter_toolbar);
+        latitudeEdit = findViewById(R.id.latitude);
+        longitudeEdit = findViewById(R.id.longitude);
+        currentLocation = findViewById(R.id.location_button);
+        fab = findViewById(R.id.search_fab);
+        rangeSlider = findViewById(R.id.seekBar);
 
         listView = binding.resultList;
 
@@ -125,41 +137,42 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-        bottomSheet = findViewById(R.id.bottom_navigation_container);
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
-        bottomSheetBehavior.setPeekHeight(toolbar.getHeight());
+        bottomSheetBehavior.setPeekHeight(0);
 
-        bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
-            @Override
-            public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-                    // do stuff when the drawer is expanded
-                }
+        MaterialShapeDrawable materialShapeDrawable = (MaterialShapeDrawable)toolbar.getBackground();
+        materialShapeDrawable.setShapeAppearanceModel(materialShapeDrawable.getShapeAppearanceModel()
+                .toBuilder()
+                .setAllCorners(CornerFamily.ROUNDED,104)
+                .build());
+    }
 
-                if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
-                    // do stuff when the drawer is collapsed
-                }
-            }
+    private void setUpListeners() {
+        filterBar.setOnClickListener(view -> {
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            bottomSheet.setVisibility(View.INVISIBLE);
+        });
 
-            @Override
-            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
-                // do stuff during the actual drag event for example
-                // animating a background color change based on the offset
-
-                // or for example hidding or showing a fab
-                /*if (slideOffset > 0.2) {
-                    if (searchFab.isShown()) {
-                        searchFab.hide();
-                    }
-                } else if (slideOffset < 0.15) {
-                    if (!searchFab.isShown()) {
-                        searchFab.show();
-                    }
-                }*/
+        currentLocation.setOnClickListener(view -> {
+            if (latitude != 0 && longitude != 0) {
+                latitudeEdit.setText(String.valueOf(latitude));
+                longitudeEdit.setText(String.valueOf(longitude));
             }
         });
 
+        fab.setOnClickListener(view -> handleSearchClick());
 
+        TextView min = findViewById(R.id.min_text);
+        TextView max = findViewById(R.id.max_text);
+        rangeSlider.addOnChangeListener((slider, value, fromUser) -> {
+            List<Float> values = slider.getValues();
+            min.setText(String.valueOf(values.get(0).intValue()));
+            max.setText(String.valueOf(values.get(1).intValue()));
+
+        });
+    }
+
+    private void startLocationServiceAndBind() {
         Intent locationService = new Intent(this, LocationService.class);
         startService(locationService);
 
@@ -177,26 +190,12 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
 
         IntentFilter filter = new IntentFilter("LOCATION");
         getLayoutInflater().getContext().registerReceiver(mBroadcastReceiver, filter);
-
-        latitudeEdit = binding.latitude;
-        longitudeEdit = binding.longitude;
-        ImageButton currentLocation = binding.locationButton;
-        currentLocation.setOnClickListener(view -> {
-            if (latitude != 0 && longitude != 0) {
-                latitudeEdit.setText(String.valueOf(latitude));
-                longitudeEdit.setText(String.valueOf(longitude));
-            }
-        });
-
-        FloatingActionButton fab = binding.searchFab;
-        fab.setOnClickListener(view -> handleSearchClick());
     }
 
     private void handleSearchClick() {
         listMenuItem.setVisible(true);
-
-        bottomSheet.setVisibility(View.INVISIBLE);
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        bottomSheet.setVisibility(View.INVISIBLE);
 
         QueryTerm queryTerm = new QueryTerm();
         queryTerm.setCategories(Collections.singletonList("spatialdistance"));
@@ -368,48 +367,14 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
+        mMap.setPadding(0, 400, 16, 0);
 
-        if (ActivityCompat.checkSelfPermission(getLayoutInflater().getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getLayoutInflater().getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
+        if (ActivityCompat.checkSelfPermission(getLayoutInflater().getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getLayoutInflater().getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            mMap.setMyLocationEnabled(true);
         }
 
         LatLng basel = new LatLng(47.55963623772201, 7.588694683884673);
-
-        mMap.setMyLocationEnabled(true);
-
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(basel, 15));
-
-    }
-
-    @Override
-    public boolean onMarkerClick(final Marker marker) {
-
-
-        final Handler handler = new Handler();
-        final long start = SystemClock.uptimeMillis();
-        final long duration = 1500;
-
-        final Interpolator interpolator = new BounceInterpolator();
-
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                long elapsed = SystemClock.uptimeMillis() - start;
-                float t = Math.max(
-                        1 - interpolator.getInterpolation((float) elapsed / duration), 0);
-                marker.setAnchor(0.5f, 1.0f + 2 * t);
-
-                if (t > 0.0) {
-                    // Post again 16ms later.
-                    handler.postDelayed(this, 16);
-                }
-            }
-        });
-
-        // We return false to indicate that we have not consumed the event and that we wish
-        // for the default behavior to occur (which is for the camera to move such that the
-        // marker is centered and for the marker's info window to open, if it has one).
-        return false;
     }
 
     @Override
@@ -422,7 +387,6 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         mapView.onResume();
         super.onResume();
     }
-
 
     @Override
     public void onPause() {
@@ -443,9 +407,7 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
     }
 
     private class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
-
         private final View mWindow;
-
         private final View mContents;
 
         CustomInfoWindowAdapter() {
@@ -469,7 +431,7 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
             Picasso.get().load(marker.getSnippet()).placeholder(R.drawable.ic_baseline_image_24).into(((ImageView) view.findViewById(R.id.badge)));
 
             String title = marker.getTitle();
-            TextView titleUi = ((TextView) view.findViewById(R.id.title));
+            TextView titleUi = view.findViewById(R.id.title);
             if (title != null) {
                 // Spannable string allows us to edit the formatting of the text.
                 SpannableString titleText = new SpannableString(title);
