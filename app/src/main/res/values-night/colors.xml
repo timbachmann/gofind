@@ -2,14 +2,14 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="colorPrimary">@color/white</color>
-    <color name="colorPrimaryVariant">@color/white</color>
-    <color name="colorOnPrimary">@color/white</color>
+    <color name="colorPrimary">#292929</color>
+    <color name="colorPrimaryVariant">#292929</color>
+    <color name="colorOnPrimary">#292929</color>
     <!-- Secondary brand color. -->
     <color name="colorSecondary">#1976D2</color>
     <color name="colorSecondaryVariant">#1565C0</color>
     <color name="colorOnSecondary">@android:color/darker_gray</color>
 
-    <color name="textColorPrimary">@color/black</color>
+    <color name="textColorPrimary">#CAC9C9</color>
     <color name="cardBackground">#F5F5F5</color>
 </resources>

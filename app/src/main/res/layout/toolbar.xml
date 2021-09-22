@@ -5,7 +5,8 @@
     style="@style/ToolbarTheme"
     android:layout_width="match_parent"
     android:layout_height="?actionBarSize"
-    android:elevation="4dp">
+    android:elevation="4dp"
+    android:background="?android:colorPrimary">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -19,7 +20,8 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             android:src="@mipmap/ic_launcher_foreground"
-            android:id="@+id/app_icon" />
+            android:id="@+id/app_icon"
+            app:tint="@color/textColorPrimary" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -29,6 +31,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             android:gravity="center_vertical|start"
+            android:textColor="@color/textColorPrimary"
             android:textAppearance="?textAppearanceHeadline6" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

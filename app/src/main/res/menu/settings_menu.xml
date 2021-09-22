@@ -8,19 +8,19 @@
       android:title="Search"
       android:icon="@drawable/ic_baseline_search_24"
       app:showAsAction="ifRoom"
-      android:tint="@color/black" />
+      android:tint="@color/textColorPrimary" />
 
   <item
       android:id="@+id/list_display" android:title="Settings"
       android:icon="@drawable/ic_baseline_format_list_bulleted_24"
       app:showAsAction="ifRoom"
       android:visible="false"
-      android:tint="@color/black" />
+      android:tint="@color/textColorPrimary" />
 
   <item
       android:id="@+id/settings" android:title="Settings"
       android:icon="@drawable/ic_baseline_settings_24"
       app:showAsAction="ifRoom"
-      android:tint="@color/black" />
+      android:tint="@color/textColorPrimary" />
 
 </menu>

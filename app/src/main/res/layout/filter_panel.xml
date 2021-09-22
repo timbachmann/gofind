@@ -9,13 +9,14 @@
     android:orientation="vertical"
     android:visibility="visible"
     app:behavior_hideable="true"
+    app:behavior_skipCollapsed="true"
     app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/filter_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/white"
+        android:background="?colorPrimary"
         android:minHeight="?actionBarSize"
         app:elevation="0dp">
 
@@ -25,7 +26,7 @@
             android:layout_height="4dp"
             android:layout_gravity="center_horizontal"
             android:background="@drawable/rounded_button"
-            android:backgroundTint="@android:color/darker_gray"
+            android:backgroundTint="?colorOnSecondary"
             android:layout_marginTop="8dp"/>
 
         <androidx.appcompat.widget.Toolbar
@@ -41,6 +42,7 @@
                 android:layout_height="match_parent"
                 android:layout_marginStart="16dp"
                 android:text="Filters"
+                android:textColor="@color/textColorPrimary"
                 android:textAppearance="?textAppearanceHeadline6" />
 
             <ImageView
@@ -75,9 +77,18 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="24dp"
                 android:text="Location"
+                android:textColor="@color/textColorPrimary"
                 android:textAppearance="?textAppearanceHeadline6"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
+
+            <CheckBox
+                android:id="@+id/spacial_check_box"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/location_text"
+                app:layout_constraintBottom_toBottomOf="@id/location_text"/>
 
             <LinearLayout
                 android:id="@+id/location_layout"
@@ -89,7 +100,8 @@
                 android:layout_marginBottom="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/location_text">
+                app:layout_constraintTop_toBottomOf="@id/location_text"
+                android:visibility="gone">
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/outlinedTextField"
@@ -98,10 +110,14 @@
                     android:hint="Latitude"
                     android:layout_marginEnd="4dp"
                     android:layout_weight=".45"
+                    app:boxStrokeColor="@color/colorSecondary"
+                    app:hintTextColor="@color/colorSecondary"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/latitude"
+                        android:textCursorDrawable="@null"
+                        android:textColor="@color/textColorPrimary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="numberDecimal" />
@@ -115,12 +131,16 @@
                     android:hint="Longitude"
                     android:layout_marginEnd="4dp"
                     android:layout_weight=".45"
+                    app:boxStrokeColor="@color/colorSecondary"
+                    app:hintTextColor="@color/colorSecondary"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/longitude"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:textCursorDrawable="@null"
+                        android:textColor="@color/textColorPrimary"
                         android:inputType="numberDecimal" />
 
                 </com.google.android.material.textfield.TextInputLayout>
@@ -155,47 +175,59 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="24dp"
                 android:text="Time"
+                android:textColor="@color/textColorPrimary"
                 android:textAppearance="?textAppearanceHeadline6"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/divider" />
 
-            <TextView
-                android:id="@+id/min_text"
+            <CheckBox
+                android:id="@+id/temporal_check_box"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
-                android:text="1600"
-                android:textSize="18sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/temporal_text" />
-
-            <TextView
-                android:id="@+id/max_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="16dp"
-                android:text="2100"
-                android:textSize="18sp"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/seekBar"
-                app:layout_constraintTop_toBottomOf="@id/temporal_text" />
+                app:layout_constraintTop_toTopOf="@id/temporal_text"
+                app:layout_constraintBottom_toBottomOf="@id/temporal_text"/>
 
-            <com.google.android.material.slider.RangeSlider
-                android:id="@+id/seekBar"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="5dp"
-                app:layout_constraintEnd_toStartOf="@id/max_text"
-                app:layout_constraintStart_toEndOf="@id/min_text"
-                app:layout_constraintTop_toBottomOf="@+id/temporal_text"
-                android:valueFrom="1600"
-                android:valueTo="2100"
-                app:minSeparation="100dp"
-                app:values="@array/initial_slider_values"
-                android:stepSize="100"/>
+                android:id="@+id/temporal_layout"
+                app:layout_constraintTop_toBottomOf="@id/temporal_text"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/min_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="16dp"
+                    android:text="1600"
+                    android:layout_weight=".05"
+                    android:textSize="18sp" />
+
+                <com.google.android.material.slider.RangeSlider
+                    android:id="@+id/seekBar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="5dp"
+                    android:valueFrom="1600"
+                    android:valueTo="2100"
+                    app:minSeparation="100dp"
+                    app:values="@array/initial_slider_values"
+                    android:stepSize="100"
+                    android:layout_weight=".9"/>
+
+                <TextView
+                    android:id="@+id/max_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:text="2100"
+                    android:textSize="18sp"
+                    android:layout_weight=".05"/>
+            </LinearLayout>
 
             <View
                 android:id="@+id/divider2"
@@ -205,7 +237,7 @@
                 android:layout_marginTop="24dp"
                 android:layout_marginEnd="16dp"
                 android:background="?android:attr/listDivider"
-                app:layout_constraintTop_toBottomOf="@id/min_text" />
+                app:layout_constraintTop_toBottomOf="@id/temporal_layout" />
 
             <TextView
                 android:id="@+id/image_text"
@@ -214,9 +246,18 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="24dp"
                 android:text="Image"
+                android:textColor="@color/textColorPrimary"
                 android:textAppearance="?textAppearanceHeadline6"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/divider2" />
+
+            <CheckBox
+                android:id="@+id/image_check_box"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/image_text"
+                app:layout_constraintBottom_toBottomOf="@id/image_text"/>
 
             <LinearLayout
                 android:id="@+id/image_layout"
@@ -228,16 +269,29 @@
                 android:layout_marginBottom="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/image_text">
+                app:layout_constraintTop_toBottomOf="@id/image_text"
+                android:visibility="gone">
 
-                <EditText
-                    android:id="@+id/image_path"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/outlinedTextField3"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:hint="Image Path"
                     android:layout_marginEnd="4dp"
-                    android:layout_weight=".70"
-                    android:hint="Image"
-                    android:inputType="text" />
+                    android:layout_weight=".7"
+                    app:boxStrokeColor="@color/colorSecondary"
+                    app:hintTextColor="@color/colorSecondary"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/image_path"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textCursorDrawable="@null"
+                        android:textColor="@color/textColorPrimary"
+                        android:inputType="text" />
+
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <ImageButton
                     android:id="@+id/image_button"
