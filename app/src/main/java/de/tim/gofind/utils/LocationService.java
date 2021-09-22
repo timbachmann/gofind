@@ -1,17 +1,41 @@
 package de.tim.gofind.utils;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import de.tim.gofind.R;
+import de.tim.gofind.ar.ARActivity;
+import de.tim.gofind.search.DataStorage;
+import de.tim.gofind.search.HistoricalImage;
+import de.tim.gofind.search.ResultsActivity;
 
 public class LocationService extends Service {
     public static final String BROADCAST_ACTION = "LOCATION";
@@ -19,14 +43,25 @@ public class LocationService extends Service {
     public LocationManager locationManager;
     public MyLocationListener listener;
     public Location previousBestLocation = null;
+    private final ArrayList<Integer> notificationIds = new ArrayList<>();
+    private static LocationService instance;
 
     Intent intent;
-    int counter = 0;
 
     @Override
     public void onCreate() {
         super.onCreate();
+        instance = this;
+        new DataStorage();
         intent = new Intent(BROADCAST_ACTION);
+    }
+
+    public static LocationService getInstance() {
+        return instance;
+    }
+
+    public ArrayList<Integer> getNotificationIds() {
+        return notificationIds;
     }
 
     @Override
@@ -36,7 +71,7 @@ public class LocationService extends Service {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 0, (LocationListener) listener);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 0, listener);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 0, listener);
     }
 
@@ -101,38 +136,89 @@ public class LocationService extends Service {
 
     @Override
     public void onDestroy() {
-        // handler.removeCallbacks(sendUpdatesToUI);
         super.onDestroy();
         Log.v("STOP_SERVICE", "DONE");
         locationManager.removeUpdates(listener);
     }
 
-    public static Thread performOnBackgroundThread(final Runnable runnable) {
-        final Thread t = new Thread() {
-            @Override
-            public void run() {
-                runnable.run();
+    private void checkDistance(HistoricalImage image, int id, double latitude, double longitude) {
+
+        int distance = (int) Utils.haversineDistance(image.getLatitude(), image.getLongitude(), latitude, longitude);
+        if (distance < 10) {
+            if (!notificationIds.contains(id)) {
+                notificationIds.add(id);
+                notifyUser(image, distance, id);
             }
-        };
-        t.start();
-        return t;
+        } else {
+            if (notificationIds.contains(id)) {
+                //NotificationManager notificationManager = (NotificationManager) getSystemService(Service.NOTIFICATION_SERVICE);
+                //notificationManager.cancel(id);
+                //notificationIds.remove(id);
+            }
+        }
     }
 
+    public void notifyUser(HistoricalImage image, int distance, int id) {
+
+        Intent intent = new Intent(this, ARActivity.class);
+        intent.putExtra("path", image.getTitle());
+        intent.putExtra("lat", image.getLatitude());
+        intent.putExtra("lon", image.getLongitude());
+        intent.putExtra("bearing", (int) image.getMarker().getTag());
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        String notificationID = "CHANNEL_GO_FIND";
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Service.NOTIFICATION_SERVICE);
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(getBaseContext(), notificationID)
+                .setSmallIcon(R.drawable.ic_twotone_my_location_24)
+                .setContentTitle(image.getTitle())
+                .setContentIntent(pendingIntent)
+                .setContentText(String.format("You are within %sm of this Target!", distance))
+                .setDefaults(NotificationCompat.DEFAULT_VIBRATE);
+
+        Picasso.get().load(image.getPath()).into(new Target() {
+            @Override
+            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                notification.setLargeIcon(bitmap);
+                notification.setStyle(new NotificationCompat.BigPictureStyle()
+                        .bigPicture(bitmap)
+                        .bigLargeIcon(null));
+                notificationManager.notify(id, notification.build());
+                image.setNotified(true);
+            }
+
+            @Override
+            public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+
+            }
+
+            @Override
+            public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+            }
+        });
+    }
 
     class MyLocationListener implements LocationListener {
 
         public void onLocationChanged(final Location loc) {
-            Log.i("*****", "Location changed");
             if (isBetterLocation(loc, previousBestLocation)) {
-                loc.getLatitude();
-                loc.getLongitude();
+                Log.i("***", "Location changed");
+                int id = 0;
+                if (DataStorage.getInstance().getImageList() != null) {
+                    for (HistoricalImage image : DataStorage.getInstance().getImageList()) {
+                        checkDistance(image, id, loc.getLatitude(), loc.getLongitude());
+                        id++;
+                    }
+                }
+
                 intent.putExtra("Latitude", loc.getLatitude());
                 intent.putExtra("Longitude", loc.getLongitude());
-                intent.putExtra("Provider", loc.getProvider());
                 sendBroadcast(intent);
-
             }
         }
+
 
     }
 }

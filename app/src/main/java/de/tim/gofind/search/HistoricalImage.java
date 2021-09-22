@@ -1,5 +1,7 @@
 package de.tim.gofind.search;
 
+import com.google.android.gms.maps.model.Marker;
+
 public class HistoricalImage {
 
     private String title;
@@ -10,18 +12,43 @@ public class HistoricalImage {
     private String path;
     private String segmentID;
     private String objectID;
+    private int bearing = 0;
+    private boolean notified = false;
+    private Marker marker;
+    private int distance;
 
     public HistoricalImage() {}
 
-    public HistoricalImage(String title, String date, String source, double latitude, double longitude, String path, String segmentID, String objectID) {
-        this.title = title;
-        this.date = date;
-        this.source = source;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.path = path;
-        this.segmentID = segmentID;
-        this.objectID = objectID;
+    public int getDistance() {
+        return distance;
+    }
+
+    public void setDistance(int distance) {
+        this.distance = distance;
+    }
+
+    public Marker getMarker() {
+        return marker;
+    }
+
+    public void setMarker(Marker marker) {
+        this.marker = marker;
+    }
+
+    public int getBearing() {
+        return bearing;
+    }
+
+    public void setBearing(int bearing) {
+        this.bearing = bearing;
+    }
+
+    public boolean isNotified() {
+        return notified;
+    }
+
+    public void setNotified(boolean notified) {
+        this.notified = notified;
     }
 
     public String getTitle() {

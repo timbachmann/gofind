@@ -46,13 +46,13 @@ public class SearchListAdapter extends ArrayAdapter<HistoricalImage> {
         holder.titleText.setText(currentImage.getTitle());
         holder.dateText.setText(currentImage.getDate());
         holder.sourceText.setText(currentImage.getSource());
-        holder.distanceText.setText(String.format("%om", (int) Utils.haversineDistance(latitude, longitude, currentImage.getLatitude(), currentImage.getLongitude())));
+        holder.distanceText.setText(String.format("%om", currentImage.getDistance()));
         Picasso.get().load(currentImage.getPath()).placeholder(R.drawable.ic_baseline_image_24).into(holder.imageView);
 
         return convertView;
     }
 
-    static class ViewHolder {
+    private static class ViewHolder {
         TextView titleText;
         TextView dateText;
         TextView sourceText;
