@@ -134,6 +134,7 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
     private LinearLayout temporalLayout;
     private LinearLayout imageLayout;
     private double orientation;
+    private Marker locationPicker;
     private boolean temporalQuery = false;
     private boolean spacialQuery = false;
     private boolean exampleQuery = false;
@@ -214,7 +215,10 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
     }
 
     private void setUpListeners() {
-        spacialCheckBox.setOnCheckedChangeListener((compoundButton, enabled) -> spacialLayout.setVisibility(enabled ? View.VISIBLE : View.INVISIBLE));
+        spacialCheckBox.setOnCheckedChangeListener((compoundButton, enabled) -> {
+            spacialLayout.setVisibility(enabled ? View.VISIBLE : View.INVISIBLE);
+            if (locationPicker != null && !enabled) locationPicker.remove();
+        });
         temporalCheckBox.setOnCheckedChangeListener((compoundButton, enabled) -> temporalLayout.setVisibility(enabled ? View.VISIBLE : View.INVISIBLE));
         imageCheckBox.setOnCheckedChangeListener((compoundButton, enabled) -> imageLayout.setVisibility(enabled ? View.VISIBLE : View.INVISIBLE));
         filterBar.setOnClickListener(view -> {
@@ -393,7 +397,6 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
                 assert currentImage != null;
                 currentImage.setTitle(objectDescriptor.getName());
                 currentImage.setPath(String.format(basePath, currentImage.getObjectID(), currentImage.getSegmentID()));
-                Toast.makeText(getBaseContext(), String.format(basePath, currentImage.getObjectID(), currentImage.getSegmentID()), Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -476,22 +479,8 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         DataStorage.getInstance().setImageList(toOrder.stream().sorted(Comparator.comparing(HistoricalImage::getDistance)).collect(Collectors.toList()));
         SearchListAdapter adapter = new SearchListAdapter(getLayoutInflater(), DataStorage.getInstance().getImageList(), latitude, longitude);
         listView.setAdapter(adapter);
-        listView.setOnItemClickListener((adapterView, view, i, l) -> onListItemClick(view, i));
 
         displayMarkersOnMap();
-    }
-
-    public void onListItemClick(View view, int i) {
-        if ((int) Utils.haversineDistance(latitude, longitude, DataStorage.getInstance().getImageList().get(i).getLatitude(), DataStorage.getInstance().getImageList().get(i).getLongitude()) < 50) {
-            Intent intent = new Intent(this, ARActivity.class);
-            intent.putExtra("path", view.findViewById(R.id.image_title).toString());
-            intent.putExtra("lat", DataStorage.getInstance().getImageList().get(i).getLatitude());
-            intent.putExtra("lon", DataStorage.getInstance().getImageList().get(i).getLongitude());
-            intent.putExtra("bearing", (int) DataStorage.getInstance().getImageList().get(i).getBearing());
-            startActivity(intent);
-        } else {
-            Toast.makeText(this, "Too far away! Get closer!", Toast.LENGTH_LONG).show();
-        }
     }
 
     private void displayMarkersOnMap() {
@@ -499,7 +488,7 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
             mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(getLayoutInflater()));
             mMap.setOnInfoWindowClickListener(marker -> {
 
-                if ((int) Utils.haversineDistance(latitude, longitude, marker.getPosition().latitude, marker.getPosition().longitude) < 10) {
+                if ((int) Utils.haversineDistance(latitude, longitude, marker.getPosition().latitude, marker.getPosition().longitude) < 30) {
                     Intent intent = new Intent(this, ARActivity.class);
                     intent.putExtra("path", marker.getTitle());
                     intent.putExtra("lat", marker.getPosition().latitude);
@@ -555,6 +544,16 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
 
         LatLng basel = new LatLng(47.55963623772201, 7.588694683884673);
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(basel, 15));
+
+        mMap.setOnMapClickListener(latLng -> {
+            mMap.clear();
+            locationPicker = mMap.addMarker(new MarkerOptions().position(latLng));
+            bottomSheet.setVisibility(View.VISIBLE);
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+            latitudeEdit.setText(String.valueOf(latLng.latitude));
+            longitudeEdit.setText(String.valueOf(latLng.longitude));
+            spacialCheckBox.setChecked(true);
+        });
     }
 
     @Override

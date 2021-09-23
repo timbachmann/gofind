@@ -3,42 +3,34 @@ package de.tim.gofind.ar;
 import static android.content.ContentValues.TAG;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.app.Activity;
-import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-
 import android.content.IntentFilter;
-import android.os.Build;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MotionEvent;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.slider.Slider;
 import com.google.ar.core.Anchor;
-import com.google.ar.core.HitResult;
-import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
 import com.google.ar.core.TrackingState;
 import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.FrameTime;
 import com.google.ar.sceneform.Scene;
-import com.google.ar.sceneform.math.MathHelper;
 import com.google.ar.sceneform.math.Quaternion;
 import com.google.ar.sceneform.math.Vector3;
 import com.google.ar.sceneform.rendering.Renderable;
 import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
-import com.google.ar.sceneform.ux.TransformationSystem;
 import com.squareup.picasso.Picasso;
-
-import org.w3c.dom.Text;
 
 import de.tim.gofind.R;
 import de.tim.gofind.databinding.ActivityArBinding;
@@ -64,7 +56,11 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
     private int bearing;
     private double azimuthToTarget;
     private ImageView arrowView;
+    private ImageView overlayView;
+    private FloatingActionButton overlayFab;
+    private Slider overlaySlider;
     private boolean imageDrawn = false;
+    private boolean overlayViewEnabled = false;
 
 
     @Override
@@ -86,10 +82,15 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
         orientationText = findViewById(R.id.orientation_text);
         targetText = findViewById(R.id.target_text);
         arrowView = findViewById(R.id.arrow_view);
+        overlayView = findViewById(R.id.overlay_image);
+        overlaySlider = findViewById(R.id.overlay_slider);
+        overlayFab = findViewById(R.id.overlay_fab);
         startLocationServiceAndBind();
 
         arFragment.getArSceneView().getScene().addOnUpdateListener(this);
 
+
+        Picasso.get().load(fullPath).into(overlayView);
         Picasso.get().load(fullPath).into(imageView);
 
         ViewRenderable.builder()
@@ -97,6 +98,30 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
                 .build()
                 .thenAccept(renderable -> testViewRenderable = renderable);
 
+        overlayFab.setOnClickListener(view -> {
+            if (!overlayViewEnabled) {
+                overlayView.setVisibility(View.VISIBLE);
+                overlaySlider.setVisibility(View.VISIBLE);
+                arrowView.setVisibility(View.INVISIBLE);
+                targetText.setVisibility(View.INVISIBLE);
+                orientationText.setVisibility(View.INVISIBLE);
+                overlayFab.setImageResource(R.drawable.ic_baseline_center_focus_weak_24);
+                arFragment.getPlaneDiscoveryController().hide();
+                overlayViewEnabled = true;
+            } else {
+                overlayView.setVisibility(View.GONE);
+                overlaySlider.setVisibility(View.GONE);
+                arrowView.setVisibility(View.VISIBLE);
+                targetText.setVisibility(View.VISIBLE);
+                orientationText.setVisibility(View.VISIBLE);
+                arFragment.getPlaneDiscoveryController().show();
+                overlayFab.setImageResource(R.drawable.ic_baseline_image_24);
+                overlayViewEnabled = false;
+            }
+        });
+
+        overlayView.setAlpha(0.5f);
+        overlaySlider.addOnChangeListener((slider, value, fromUser) -> overlayView.setAlpha(value));
 
         /*arFragment.setOnTapArPlaneListener(
                 (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {
@@ -133,7 +158,7 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
             float[] rotation = {0, 0, 0, 1};
             Anchor anchor = session.createAnchor(new Pose(position, rotation));*/
 
-            if ((int)orientation >= (int) azimuthToTarget - 1 && (int) orientation <= (int) azimuthToTarget + 1) {
+            if (!overlayViewEnabled && (int)orientation >= (int) azimuthToTarget - 1 && (int) orientation <= (int) azimuthToTarget + 1) {
                 arrowView.setImageResource(android.R.color.transparent);
                 int distance = (int) Utils.haversineDistance(latitude, longitude, targetLat, targetLon);
                 Vector3 cameraPos = arFragment.getArSceneView().getScene().getCamera().getWorldPosition();
@@ -143,28 +168,28 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
 
                 // Create an ARCore Anchor at the position.
                 Pose pose = Pose.makeTranslation(position.x, position.y, position.z);
-                Anchor anchor = arFragment.getArSceneView().getSession().createAnchor(pose);
 
+                assert session != null;
+                Anchor anchor = session.createAnchor(pose);
                 mAnchorNode = new AnchorNode(anchor);
                 mAnchorNode.setParent(arFragment.getArSceneView().getScene());
-                //mAnchorNode.setRenderable(testViewRenderable);
 
                 TransformableNode node = new TransformableNode(arFragment.getTransformationSystem());
                 node.setRenderable(testViewRenderable);
-                //node.setWorldScale(node.getWorldScale().scaled(10f));
                 node.setParent(mAnchorNode);
 
                 Quaternion localRotation = node.getLocalRotation();
 
-                Quaternion rotationDeltaX = new Quaternion(Vector3.up(), (bearing + (int) orientation % 360));
+                Quaternion rotationDeltaX = new Quaternion(Vector3.up(), (bearing - (int) orientation % 360));
+                //Toast.makeText(getBaseContext(), String.format("%s      %s", bearing, (bearing - (int) orientation % 360)), Toast.LENGTH_SHORT).show();
                 localRotation = Quaternion.multiply(localRotation, rotationDeltaX);
 
                 node.setLocalRotation(localRotation);
                 imageDrawn = true;
 
-            } else if (!imageDrawn && (int) orientation < (int) azimuthToTarget - 1) {
+            } else if (!overlayViewEnabled && !imageDrawn && (int) orientation < (int) azimuthToTarget - 1) {
                 arrowView.setImageResource(R.drawable.ic_baseline_keyboard_double_arrow_right_24);
-            } else if (!imageDrawn && (int) orientation > (int) azimuthToTarget + 1) {
+            } else if (!overlayViewEnabled && !imageDrawn && (int) orientation > (int) azimuthToTarget + 1) {
                 arrowView.setImageResource(R.drawable.ic_baseline_keyboard_double_arrow_left_24);
             }
 
@@ -220,7 +245,7 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
                     }
                     orientationText.setText(String.valueOf((int) orientation));
                     if (longitude != 0 && latitude != 0) {
-                        azimuthToTarget = Utils.azimuthToTarget(targetLat, targetLon, latitude, longitude);
+                        azimuthToTarget = Utils.calculateHeadingAngle(targetLat, targetLon, latitude, longitude);
 
                         targetText.setText(String.valueOf((int) azimuthToTarget));
                     }
