@@ -1,5 +1,6 @@
 package de.tim.gofind.search;
 
+import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,23 +10,19 @@ import android.widget.TextView;
 import com.squareup.picasso.Picasso;
 import java.util.List;
 import de.tim.gofind.R;
-import de.tim.gofind.utils.Utils;
 
 public class SearchListAdapter extends ArrayAdapter<HistoricalImage> {
 
     private final LayoutInflater inflater;
     private final List<HistoricalImage> historicalImageList;
-    private final double latitude;
-    private final double longitude;
 
-    public SearchListAdapter(LayoutInflater inflater, List<HistoricalImage> historicalImageList, double latitude, double longitude) {
+    public SearchListAdapter(LayoutInflater inflater, List<HistoricalImage> historicalImageList) {
         super(inflater.getContext(), R.layout.list_item, historicalImageList);
-        this.latitude = latitude;
-        this.longitude = longitude;
         this.inflater = inflater;
         this.historicalImageList = historicalImageList;
     }
 
+    @SuppressLint("InflateParams")
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
 

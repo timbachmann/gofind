@@ -41,7 +41,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_marginStart="16dp"
-                android:text="Filters"
+                android:text="@string/filters"
                 android:textColor="@color/textColorPrimary"
                 android:textAppearance="?textAppearanceHeadline6" />
 
@@ -76,7 +76,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="24dp"
-                android:text="Location"
+                android:text="@string/location"
                 android:textColor="@color/textColorPrimary"
                 android:textAppearance="?textAppearanceHeadline6"
                 app:layout_constraintStart_toStartOf="parent"
@@ -107,7 +107,7 @@
                     android:id="@+id/outlinedTextField"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:hint="Latitude"
+                    android:hint="@string/latitude"
                     android:layout_marginEnd="4dp"
                     android:layout_weight=".45"
                     app:boxStrokeColor="@color/colorSecondary"
@@ -128,7 +128,7 @@
                     android:id="@+id/outlinedTextField2"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:hint="Longitude"
+                    android:hint="@string/longitude"
                     android:layout_marginEnd="4dp"
                     android:layout_weight=".45"
                     app:boxStrokeColor="@color/colorSecondary"
@@ -174,7 +174,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="24dp"
-                android:text="Time"
+                android:text="@string/time"
                 android:textColor="@color/textColorPrimary"
                 android:textAppearance="?textAppearanceHeadline6"
                 app:layout_constraintStart_toStartOf="parent"
@@ -201,7 +201,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
-                    android:text="1600"
+                    android:text="@string/lower_time_bound"
                     android:layout_weight=".05"
                     android:textSize="18sp" />
 
@@ -224,7 +224,7 @@
                     android:layout_marginStart="8dp"
                     android:layout_marginTop="16dp"
                     android:layout_marginEnd="16dp"
-                    android:text="2100"
+                    android:text="@string/upper_time_bound"
                     android:textSize="18sp"
                     android:layout_weight=".05"/>
             </LinearLayout>
@@ -245,7 +245,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="24dp"
-                android:text="Image"
+                android:text="@string/image"
                 android:textColor="@color/textColorPrimary"
                 android:textAppearance="?textAppearanceHeadline6"
                 app:layout_constraintStart_toStartOf="parent"
@@ -276,7 +276,7 @@
                     android:id="@+id/outlinedTextField3"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:hint="Image Path"
+                    android:hint="@string/image_path"
                     android:layout_marginEnd="4dp"
                     android:layout_weight=".7"
                     app:boxStrokeColor="@color/colorSecondary"
@@ -321,18 +321,46 @@
                     app:tint="@color/white" />
             </LinearLayout>
 
-
-            <ImageButton
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/search_fab"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_margin="16dp"
-                android:contentDescription="Search"
+                android:contentDescription="@string/search"
                 android:background="@drawable/rounded_button"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                android:src="@drawable/ic_outline_search_24"/>
+                android:clickable="true">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <TextView
+                        android:id="@+id/search_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:gravity="center_vertical"
+                        android:text="@string/search"
+                        android:textColor="@color/white"
+                        android:textAppearance="?textAppearanceHeadline6" />
+
+                    <ImageView
+                        android:id="@+id/search_icon"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:padding="12dp"
+                        android:layout_gravity=""
+                        android:src="@drawable/ic_outline_search_24" />
+
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <Space
                 android:layout_width="match_parent"

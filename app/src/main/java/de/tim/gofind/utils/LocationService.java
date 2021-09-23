@@ -1,12 +1,9 @@
 package de.tim.gofind.utils;
 
 import android.Manifest;
-import android.app.Notification;
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -15,11 +12,8 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
@@ -27,22 +21,19 @@ import androidx.core.app.NotificationCompat;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import de.tim.gofind.R;
 import de.tim.gofind.ar.ARActivity;
 import de.tim.gofind.search.DataStorage;
 import de.tim.gofind.search.HistoricalImage;
-import de.tim.gofind.search.ResultsActivity;
 
 public class LocationService extends Service {
     public static final String BROADCAST_ACTION = "LOCATION";
     private static final int TWO_MINUTES = 1000 * 60 * 2;
-    public LocationManager locationManager;
-    public MyLocationListener listener;
-    public Location previousBestLocation = null;
+    private LocationManager locationManager;
+    private MyLocationListener listener;
+    private Location previousBestLocation = null;
     private final ArrayList<Integer> notificationIds = new ArrayList<>();
     private static LocationService instance;
 
@@ -116,10 +107,7 @@ public class LocationService extends Service {
             return true;
         } else if (isNewer && !isLessAccurate) {
             return true;
-        } else if (isNewer && !isSignificantlyLessAccurate && isFromSameProvider) {
-            return true;
-        }
-        return false;
+        } else return isNewer && !isSignificantlyLessAccurate && isFromSameProvider;
     }
 
 
@@ -144,7 +132,7 @@ public class LocationService extends Service {
     private void checkDistance(HistoricalImage image, int id, double latitude, double longitude) {
 
         int distance = (int) Utils.haversineDistance(image.getLatitude(), image.getLongitude(), latitude, longitude);
-        if (distance < 30) {
+        if (distance < getResources().getInteger(R.integer.ar_distance)) {
             if (!notificationIds.contains(id)) {
                 notificationIds.add(id);
                 notifyUser(image, distance, id);

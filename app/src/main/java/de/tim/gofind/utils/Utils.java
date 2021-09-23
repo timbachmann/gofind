@@ -4,8 +4,6 @@ import static java.lang.Math.atan2;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 
-import android.location.Location;
-
 public class Utils {
 
     public static double degreesToRadians(double angle) {

@@ -17,28 +17,17 @@ import de.tim.gofind.search.DataStorage;
 public class OrientationService extends Service implements SensorEventListener {
 
     public static final String BROADCAST_ACTION = "ORIENTATION";
-    private static OrientationService instance;
-    private float[] inR = new float[9];
-    private float[] gravity = new float[3];
-    private float[] geomag = new float[3];
     private WindowManager windowManager;
-    private SensorManager sensorManager;
     private Intent intent;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        instance = this;
         new DataStorage();
         intent = new Intent(BROADCAST_ACTION);
-
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR), SensorManager.SENSOR_DELAY_NORMAL);
-    }
-
-    public static OrientationService getInstance() {
-        return instance;
     }
 
     @Override
@@ -47,14 +36,7 @@ public class OrientationService extends Service implements SensorEventListener {
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.v("STOP_SERVICE", "DONE");
-    }
-
-    @Override
     public void onSensorChanged(SensorEvent event) {
-
         switch (event.sensor.getType()) {
             case Sensor.TYPE_GAME_ROTATION_VECTOR:
             case Sensor.TYPE_ROTATION_VECTOR:
@@ -66,6 +48,7 @@ public class OrientationService extends Service implements SensorEventListener {
         }
     }
 
+    @SuppressWarnings("SuspiciousNameCombination")
     private void processSensorOrientation(float[] rotation) {
         float[] rotationMatrix = new float[9];
         SensorManager.getRotationMatrixFromVector(rotationMatrix, rotation);
@@ -95,7 +78,6 @@ public class OrientationService extends Service implements SensorEventListener {
         SensorManager.remapCoordinateSystem(rotationMatrix, worldAxisX,
                 worldAxisY, adjustedRotationMatrix);
 
-        // azimuth/pitch/roll
         float[] orientation = new float[3];
         SensorManager.getOrientation(adjustedRotationMatrix, orientation);
 
@@ -115,14 +97,14 @@ public class OrientationService extends Service implements SensorEventListener {
                 gravity = sensorEvent.values.clone();
                 break;
             case Sensor.TYPE_MAGNETIC_FIELD:
-                geomag = sensorEvent.values.clone();
+                geomagnetic = sensorEvent.values.clone();
                 break;
         }
 
-        // If gravity and geomag have values then find rotation matrix
-        if (gravity != null && geomag != null) {
+        // If gravity and geomagnetic have values then find rotation matrix
+        if (gravity != null && geomagnetic != null) {
             // checks that the rotation matrix is found
-            if (SensorManager.getRotationMatrix(inR, null, gravity, geomag)) {
+            if (SensorManager.getRotationMatrix(inR, null, gravity, geomagnetic)) {
 
                 float[] orientMatrix = new float[3];
                 float[] remapMatrix = new float[9];
@@ -137,6 +119,12 @@ public class OrientationService extends Service implements SensorEventListener {
             }
         }
     }*/
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.v("STOP_SERVICE", "DONE");
+    }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {

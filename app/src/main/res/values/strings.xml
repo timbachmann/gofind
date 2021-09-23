@@ -1,7 +1,13 @@
 <resources>
     <string name="app_name">GoFind</string>
-    <string name="title_home">Search</string>
-    <string name="title_dashboard">AR</string>
-    <string name="title_notifications">Map</string>
-    <string name="title_activity_maps">MapsActivity</string>
+    <string name="filters">Filters</string>
+    <string name="location">Location</string>
+    <string name="latitude">Latitude</string>
+    <string name="longitude">Longitude</string>
+    <string name="time">Time</string>
+    <string name="lower_time_bound">1600</string>
+    <string name="upper_time_bound">2100</string>
+    <string name="image">Image</string>
+    <string name="image_path">Image Path</string>
+    <string name="search">Search</string>
 </resources>
