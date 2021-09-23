@@ -25,24 +25,10 @@ public class Utils {
         return R * c;
     }
 
-    public static double azimuthToTarget(double lat1, double lon1, double lat2, double lon2) {
-        double azi = Math.abs(Math.toDegrees(Math.atan((lon1-lon2)/(lat1-lat2))));
-        if((lon1-lon2)>0&&(lat1-lat2)<0){
-            azi = 180 - azi;
-        }
-        if((lon1-lon2)<0&&(lat1-lat2)<0){
-            azi = 180 + azi;
-        }
-        if((lon1-lon2)<0&&(lat1-lat2)>0){
-            azi = 360 - azi;
-        }
-        return azi;
-    }
-
-    private double calculateHeadingAngle(Location currentLocation, Location destinationLocation) {
-        double currentLatitudeRadians = Math.toRadians(currentLocation.getLatitude());
-        double destinationLatitudeRadians = Math.toRadians(destinationLocation.getLatitude());
-        double deltaLongitude = Math.toRadians(destinationLocation.getLongitude() - currentLocation.getLongitude());
+    public static double calculateHeadingAngle(double targetLat, double targetLon, double currentLat, double currentLon) {
+        double currentLatitudeRadians = Math.toRadians(currentLat);
+        double destinationLatitudeRadians = Math.toRadians(targetLat);
+        double deltaLongitude = Math.toRadians(targetLon - currentLon);
 
         double y = cos(currentLatitudeRadians) * sin(destinationLatitudeRadians) -
                 sin(currentLatitudeRadians) * cos(destinationLatitudeRadians) * cos(deltaLongitude);

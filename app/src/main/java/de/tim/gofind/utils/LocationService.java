@@ -144,7 +144,7 @@ public class LocationService extends Service {
     private void checkDistance(HistoricalImage image, int id, double latitude, double longitude) {
 
         int distance = (int) Utils.haversineDistance(image.getLatitude(), image.getLongitude(), latitude, longitude);
-        if (distance < 10) {
+        if (distance < 30) {
             if (!notificationIds.contains(id)) {
                 notificationIds.add(id);
                 notifyUser(image, distance, id);

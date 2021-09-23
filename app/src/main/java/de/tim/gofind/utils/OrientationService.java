@@ -1,6 +1,7 @@
 package de.tim.gofind.utils;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -8,6 +9,8 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.Surface;
+import android.view.WindowManager;
 
 import de.tim.gofind.search.DataStorage;
 
@@ -15,10 +18,12 @@ public class OrientationService extends Service implements SensorEventListener {
 
     public static final String BROADCAST_ACTION = "ORIENTATION";
     private static OrientationService instance;
-    float[] inR = new float[9];
-    float[] gravity = new float[3];
-    float[] geomag = new float[3];
-    Intent intent;
+    private float[] inR = new float[9];
+    private float[] gravity = new float[3];
+    private float[] geomag = new float[3];
+    private WindowManager windowManager;
+    private SensorManager sensorManager;
+    private Intent intent;
 
     @Override
     public void onCreate() {
@@ -27,9 +32,9 @@ public class OrientationService extends Service implements SensorEventListener {
         new DataStorage();
         intent = new Intent(BROADCAST_ACTION);
 
-        SensorManager sm = (SensorManager) getSystemService(SENSOR_SERVICE);
-        sm.registerListener(this, sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
-        sm.registerListener(this, sm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_NORMAL);
+        windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR), SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     public static OrientationService getInstance() {
@@ -47,7 +52,59 @@ public class OrientationService extends Service implements SensorEventListener {
         Log.v("STOP_SERVICE", "DONE");
     }
 
-    public void onSensorChanged(SensorEvent sensorEvent) {
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+
+        switch (event.sensor.getType()) {
+            case Sensor.TYPE_GAME_ROTATION_VECTOR:
+            case Sensor.TYPE_ROTATION_VECTOR:
+                processSensorOrientation(event.values);
+                break;
+            default:
+                Log.e("DeviceOrientation", "Sensor event type not supported");
+                break;
+        }
+    }
+
+    private void processSensorOrientation(float[] rotation) {
+        float[] rotationMatrix = new float[9];
+        SensorManager.getRotationMatrixFromVector(rotationMatrix, rotation);
+        final int worldAxisX;
+        final int worldAxisY;
+
+        switch (windowManager.getDefaultDisplay().getRotation()) {
+            case Surface.ROTATION_90:
+                worldAxisX = SensorManager.AXIS_Z;
+                worldAxisY = SensorManager.AXIS_MINUS_X;
+                break;
+            case Surface.ROTATION_180:
+                worldAxisX = SensorManager.AXIS_MINUS_X;
+                worldAxisY = SensorManager.AXIS_MINUS_Z;
+                break;
+            case Surface.ROTATION_270:
+                worldAxisX = SensorManager.AXIS_MINUS_Z;
+                worldAxisY = SensorManager.AXIS_X;
+                break;
+            case Surface.ROTATION_0:
+            default:
+                worldAxisX = SensorManager.AXIS_X;
+                worldAxisY = SensorManager.AXIS_Z;
+                break;
+        }
+        float[] adjustedRotationMatrix = new float[9];
+        SensorManager.remapCoordinateSystem(rotationMatrix, worldAxisX,
+                worldAxisY, adjustedRotationMatrix);
+
+        // azimuth/pitch/roll
+        float[] orientation = new float[3];
+        SensorManager.getOrientation(adjustedRotationMatrix, orientation);
+
+        double finalOrientation = ((float) Math.toDegrees(orientation[0]) + 360f) % 360f;
+        intent.putExtra("orientation", finalOrientation);
+        System.out.println(finalOrientation);
+        sendBroadcast(intent);
+    }
+    /*public void onSensorChanged(SensorEvent sensorEvent) {
         // If the sensor data is unreliable return
         if (sensorEvent.accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE)
             return;
@@ -79,7 +136,7 @@ public class OrientationService extends Service implements SensorEventListener {
                 sendBroadcast(intent);
             }
         }
-    }
+    }*/
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
