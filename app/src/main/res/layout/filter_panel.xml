@@ -211,10 +211,10 @@
                     android:layout_height="wrap_content"
                     android:layout_margin="5dp"
                     android:valueFrom="1600"
-                    android:valueTo="2100"
+                    android:valueTo="2030"
                     app:minSeparation="100dp"
                     app:values="@array/initial_slider_values"
-                    android:stepSize="100"
+                    android:stepSize="10"
                     android:layout_weight=".9"/>
 
                 <TextView

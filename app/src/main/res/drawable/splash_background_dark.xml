@@ -11,7 +11,7 @@
     <item
         android:width="380dp"
         android:height="380dp"
-        android:drawable="@mipmap/uni_basel_logo_dark"
+        android:drawable="@drawable/uni_basel_logo_dark"
         android:gravity="bottom|center"
         android:start="32dp"
         android:end="32dp"

@@ -5,11 +5,9 @@
     <color name="colorPrimary">#292929</color>
     <color name="colorPrimaryVariant">#292929</color>
     <color name="colorOnPrimary">#292929</color>
-    <!-- Secondary brand color. -->
     <color name="colorSecondary">#1976D2</color>
     <color name="colorSecondaryVariant">#1565C0</color>
     <color name="colorOnSecondary">@android:color/darker_gray</color>
-
     <color name="textColorPrimary">#CAC9C9</color>
     <color name="cardBackground">#4C4C4C</color>
 </resources>

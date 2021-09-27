@@ -16,7 +16,7 @@ import de.tim.gofind.search.DataStorage;
 
 public class OrientationService extends Service implements SensorEventListener {
 
-    public static final String BROADCAST_ACTION = "ORIENTATION";
+    public static final String BROADCAST_ORIENTATION = "ORIENTATION";
     private WindowManager windowManager;
     private Intent intent;
 
@@ -24,7 +24,7 @@ public class OrientationService extends Service implements SensorEventListener {
     public void onCreate() {
         super.onCreate();
         new DataStorage();
-        intent = new Intent(BROADCAST_ACTION);
+        intent = new Intent(BROADCAST_ORIENTATION);
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR), SensorManager.SENSOR_DELAY_NORMAL);
@@ -86,39 +86,6 @@ public class OrientationService extends Service implements SensorEventListener {
         System.out.println(finalOrientation);
         sendBroadcast(intent);
     }
-    /*public void onSensorChanged(SensorEvent sensorEvent) {
-        // If the sensor data is unreliable return
-        if (sensorEvent.accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE)
-            return;
-
-        // Gets the value of the sensor that has been changed
-        switch (sensorEvent.sensor.getType()) {
-            case Sensor.TYPE_ACCELEROMETER:
-                gravity = sensorEvent.values.clone();
-                break;
-            case Sensor.TYPE_MAGNETIC_FIELD:
-                geomagnetic = sensorEvent.values.clone();
-                break;
-        }
-
-        // If gravity and geomagnetic have values then find rotation matrix
-        if (gravity != null && geomagnetic != null) {
-            // checks that the rotation matrix is found
-            if (SensorManager.getRotationMatrix(inR, null, gravity, geomagnetic)) {
-
-                float[] orientMatrix = new float[3];
-                float[] remapMatrix = new float[9];
-
-                SensorManager.remapCoordinateSystem(inR, SensorManager.AXIS_X, SensorManager.AXIS_Z, remapMatrix);
-                SensorManager.getOrientation(remapMatrix, orientMatrix);
-
-                double orientation = Math.toDegrees(orientMatrix[0]);
-
-                intent.putExtra("orientation", orientation);
-                sendBroadcast(intent);
-            }
-        }
-    }*/
 
     @Override
     public void onDestroy() {

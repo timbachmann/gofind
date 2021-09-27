@@ -6,8 +6,9 @@
     <string name="longitude">Longitude</string>
     <string name="time">Time</string>
     <string name="lower_time_bound">1600</string>
-    <string name="upper_time_bound">2100</string>
+    <string name="upper_time_bound">2030</string>
     <string name="image">Image</string>
     <string name="image_path">Image Path</string>
     <string name="search">Search</string>
+    <string name="notification_channel">Location Background Service</string>
 </resources>

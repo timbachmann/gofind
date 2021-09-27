@@ -10,7 +10,7 @@
     <item
         android:width="380dp"
         android:height="380dp"
-        android:drawable="@mipmap/uni_basel_logo_light"
+        android:drawable="@drawable/uni_basel_logo_light"
         android:gravity="bottom|center"
         android:start="32dp"
         android:end="32dp"

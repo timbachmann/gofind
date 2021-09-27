@@ -3,42 +3,33 @@ package de.tim.gofind.search;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -93,8 +84,6 @@ import org.openapitools.client.model.SimilarityQueryResult;
 import org.openapitools.client.model.SimilarityQueryResultBatch;
 import org.openapitools.client.model.StringDoublePair;
 
-import java.io.FileDescriptor;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -107,22 +96,23 @@ import java.util.stream.Collectors;
 
 import de.tim.gofind.R;
 import de.tim.gofind.ar.ARActivity;
-import de.tim.gofind.databinding.ActivityResultsBinding;
+import de.tim.gofind.databinding.ActivitySearchBinding;
 import de.tim.gofind.utils.CustomInfoWindowAdapter;
 import de.tim.gofind.utils.LocationService;
 import de.tim.gofind.utils.Utils;
 
-public class ResultsActivity extends AppCompatActivity implements OnMapReadyCallback, Response.ErrorListener {
+public class SearchActivity extends AppCompatActivity implements OnMapReadyCallback, Response.ErrorListener {
 
     private final int VIEW_DISTANCE = 1000;
     private final HashMap<String, HistoricalImage> imageMap = new HashMap<>();
+    public static final String NOTIFICATION_ID = "CHANNEL_GO_FIND";
     private double latitude;
     private double longitude;
     private ListView listView;
     private GoogleMap mMap = null;
     private MapView mapView;
     private LinearLayout bottomSheet;
-    private ActivityResultsBinding binding;
+    private ActivitySearchBinding binding;
     private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
     private BroadcastReceiver mBroadcastReceiver;
     private EditText latitudeEdit;
@@ -165,7 +155,7 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = ActivityResultsBinding.inflate(getLayoutInflater());
+        binding = ActivitySearchBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         ActivityResultContracts.RequestPermission requestPermissionsContract = new ActivityResultContracts.RequestPermission();
@@ -178,6 +168,12 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
             backgroundLocationPermission.setChecked(isGranted);
         });
 
+        MaterialShapeDrawable materialShapeDrawable = (MaterialShapeDrawable) toolbar.getBackground();
+        materialShapeDrawable.setShapeAppearanceModel(materialShapeDrawable.getShapeAppearanceModel()
+                .toBuilder()
+                .setAllCorners(CornerFamily.ROUNDED, 104)
+                .build());
+
         setupNotificationChannel();
         initializeViews(savedInstanceState);
         setSupportActionBar(toolbar);
@@ -189,14 +185,17 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
 
     private void setupNotificationChannel() {
         CharSequence name = getString(R.string.app_name);
-        String description = getString(R.string.app_name);
+        String description = getString(R.string.notification_channel);
         int importance = NotificationManager.IMPORTANCE_DEFAULT;
-        NotificationChannel channel = new NotificationChannel("CHANNEL_GO_FIND", name, importance);
+        NotificationChannel channel = new NotificationChannel(NOTIFICATION_ID, name, importance);
         channel.setDescription(description);
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.createNotificationChannel(channel);
     }
 
+    /**
+     * Method to set window flags based on the current ui mode. (fullscreen, status bar color)
+     */
     private void setFlags() {
         if (getResources().getBoolean(R.bool.night_mode_on)) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
@@ -245,54 +244,6 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         imageButton = findViewById(R.id.image_button);
         cameraButton = findViewById(R.id.camera_button);
         searchBitmapView = findViewById(R.id.search_image_thumbnail);
-
-        MaterialShapeDrawable materialShapeDrawable = (MaterialShapeDrawable) toolbar.getBackground();
-        materialShapeDrawable.setShapeAppearanceModel(materialShapeDrawable.getShapeAppearanceModel()
-                .toBuilder()
-                .setAllCorners(CornerFamily.ROUNDED, 104)
-                .build());
-    }
-
-    private void openCamera() {
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.TITLE, "New Picture");
-        values.put(MediaStore.Images.Media.DESCRIPTION, "From the Camera");
-        image_uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, image_uri);
-        startActivityForResult(cameraIntent, IMAGE_CAPTURE_CODE);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == IMAGE_CAPTURE_CODE && resultCode == RESULT_OK){
-            searchBitmap = uriToBitmap(image_uri);
-        }
-
-        if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && data != null){
-            image_uri = data.getData();
-            searchBitmap = uriToBitmap(image_uri);
-        }
-
-        searchBitmapView.setRotation(90);
-        searchBitmapView.setImageBitmap(searchBitmap);
-    }
-
-    private Bitmap uriToBitmap(Uri selectedFileUri) {
-        try {
-            ParcelFileDescriptor parcelFileDescriptor =
-                    getContentResolver().openFileDescriptor(selectedFileUri, "r");
-            FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
-            Bitmap image = BitmapFactory.decodeFileDescriptor(fileDescriptor);
-
-            parcelFileDescriptor.close();
-            return image;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return  null;
     }
 
     private void setUpListeners() {
@@ -304,7 +255,7 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
 
         cameraButton.setOnClickListener(view -> openCamera());
 
-        mapOverlaySlider.addOnChangeListener((slider, value, fromUser) -> mapOverlay.setTransparency(1-value));
+        mapOverlaySlider.addOnChangeListener((slider, value, fromUser) -> mapOverlay.setTransparency(1 - value));
 
         cancelFab.setOnClickListener(view -> {
             if (mapOverlay != null) {
@@ -315,51 +266,16 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         });
 
         locationFab.setOnClickListener(view -> {
-            if(mMap != null) {
-                if(locationButton != null)
+            if (mMap != null) {
+                if (locationButton != null)
                     locationButton.callOnClick();
             }
         });
 
-        layersFab.setOnClickListener(view -> {
-            AlertDialog materialAlertDialog =
-                    new MaterialAlertDialogBuilder(ResultsActivity.this)
-                            .setTitle("Historical Maps")
-                            .setItems(HistoricalMaps.getMapNameList(), (dialogInterface, i) -> {
-                                if (mMap != null) {
-                                    if (mapOverlay != null) mapOverlay.remove();
-                                    HistoricalMap currentMap = HistoricalMaps.getMapList().get(i);
-                                    LatLng newarkLatLng = new LatLng(47.55751690300252, 7.589010670781135);
-
-                                    GroundOverlayOptions groundOverlayOptions = new GroundOverlayOptions();
-
-                                    Picasso.get().load(currentMap.getPath()).into(new Target() {
-                                        @Override
-                                        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-
-                                            groundOverlayOptions.bearing(220.0f);
-                                            groundOverlayOptions.position(newarkLatLng, bitmap.getWidth() * 1.5f, bitmap.getHeight() * 1.5f);
-                                            groundOverlayOptions.image(BitmapDescriptorFactory.fromBitmap(bitmap));
-                                            mapOverlay = mMap.addGroundOverlay(groundOverlayOptions);
-                                            assert mapOverlay != null;
-                                            mapOverlay.setTransparency(1-mapOverlaySlider.getValue());
-                                            cancelFab.setVisibility(View.VISIBLE);
-                                            mapOverlaySlider.setVisibility(View.VISIBLE);
-                                        }
-
-                                        @Override
-                                        public void onBitmapFailed(Exception e, Drawable errorDrawable) {
-
-                                        }
-
-                                        @Override
-                                        public void onPrepareLoad(Drawable placeHolderDrawable) {
-
-                                        }
-                                    });
-                                }
-                            }).show();
-        });
+        layersFab.setOnClickListener(view -> new MaterialAlertDialogBuilder(SearchActivity.this)
+                .setTitle("Historical Maps")
+                .setItems(HistoricalMaps.getMapNameList(),
+                        (dialogInterface, i) -> onHistoricalMapsDialogClick(i)).show());
 
         spacialCheckBox.setOnCheckedChangeListener((compoundButton, enabled) -> {
             spacialLayout.setVisibility(enabled ? View.VISIBLE : View.INVISIBLE);
@@ -402,6 +318,70 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         });
     }
 
+    private void onHistoricalMapsDialogClick(int position) {
+        if (mMap != null) {
+            if (mapOverlay != null) {
+                mapOverlay.remove();
+            }
+            HistoricalMap currentMap = HistoricalMaps.getMapList().get(position);
+            LatLng baselLatLng = new LatLng(47.55751690300252, 7.589010670781135);
+
+            Picasso.get().load(currentMap.getPath()).into(new Target() {
+                @Override
+                public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+
+                    GroundOverlayOptions groundOverlayOptions = new GroundOverlayOptions();
+                    groundOverlayOptions.bearing(220.0f);
+                    groundOverlayOptions.position(baselLatLng, bitmap.getWidth() * 1.5f, bitmap.getHeight() * 1.5f);
+                    groundOverlayOptions.image(BitmapDescriptorFactory.fromBitmap(bitmap));
+
+                    mapOverlay = mMap.addGroundOverlay(groundOverlayOptions);
+                    assert mapOverlay != null;
+                    mapOverlay.setTransparency(1 - mapOverlaySlider.getValue());
+                    cancelFab.setVisibility(View.VISIBLE);
+                    mapOverlaySlider.setVisibility(View.VISIBLE);
+                }
+
+                @Override
+                public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+
+                }
+
+                @Override
+                public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                }
+            });
+        }
+    }
+
+    private void openCamera() {
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.TITLE, "New Picture");
+        values.put(MediaStore.Images.Media.DESCRIPTION, "From the Camera");
+        image_uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, image_uri);
+        startActivityForResult(cameraIntent, IMAGE_CAPTURE_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == IMAGE_CAPTURE_CODE && resultCode == RESULT_OK) {
+            searchBitmap = Utils.uriToBitmap(image_uri, getContentResolver());
+        }
+
+        if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && data != null) {
+            image_uri = data.getData();
+            searchBitmap = Utils.uriToBitmap(image_uri, getContentResolver());
+        }
+
+        searchBitmapView.setRotation(90);
+        searchBitmapView.setImageBitmap(searchBitmap);
+    }
+
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -411,47 +391,31 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
 
     private void startLocationServiceAndBind() {
         Intent locationService = new Intent(this, LocationService.class);
-        locationService.setAction("START");
+        locationService.setAction(LocationService.ACTION_START);
         startForegroundService(locationService);
 
-        mBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if ("LOCATION".equals(action)) {
-                    latitude = intent.getDoubleExtra("Latitude", 0);
-                    longitude = intent.getDoubleExtra("Longitude", 0);
-                }
-            }
+        mBroadcastReceiver = new LocationReceiver();
 
-        };
-
-        IntentFilter filter = new IntentFilter("LOCATION");
-        getLayoutInflater().getContext().registerReceiver(mBroadcastReceiver, filter);
+        IntentFilter locationFilter = new IntentFilter(LocationService.BROADCAST_LOCATION);
+        getLayoutInflater().getContext().registerReceiver(mBroadcastReceiver, locationFilter);
     }
 
     private void drawCircle(LatLng point) {
-        // Instantiating CircleOptions to draw a circle around the marker
         CircleOptions circleOptions = new CircleOptions();
-        // Specifying the center of the circle
         circleOptions.center(point);
-        // Radius of the circle
         circleOptions.radius(VIEW_DISTANCE);
-        // Border color of the circle
         circleOptions.strokeColor(Color.BLUE);
-        // Fill color of the circle
         circleOptions.fillColor(Color.TRANSPARENT);
-        // Border width of the circle
         circleOptions.strokeWidth(2);
-        // Adding the circle to the GoogleMap
         locationCircle = mMap.addCircle(circleOptions);
     }
 
     private void handleSearchClick() {
         imageMap.clear();
-        if (locationCircle != null) locationCircle.remove();
+        if (locationCircle != null) {
+            locationCircle.remove();
+        }
         LocationService.getInstance().getNotificationIds().clear();
-
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         bottomSheet.setVisibility(View.INVISIBLE);
 
@@ -477,7 +441,7 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
 
         if (exampleQuery && searchBitmap != null) {
             QueryTerm queryTerm = new QueryTerm();
-            queryTerm.setCategories(Collections.singletonList("distance"));
+            queryTerm.setCategories(Collections.singletonList("edge"));
             queryTerm.setType(QueryTerm.TypeEnum.IMAGE);
             queryTerm.setData(Utils.toBase64(searchBitmap));
             queryTerms.add(queryTerm);
@@ -555,18 +519,18 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
                 HistoricalImage currentImage = imageMap.get(objectDescriptor.getObjectId());
                 assert currentImage != null;
                 currentImage.setTitle(objectDescriptor.getName());
-                currentImage.setPath(String.format(basePath, currentImage.getObjectID(), currentImage.getSegmentID()));
+                currentImage.setPath(String.format(basePath, objectDescriptor.getObjectId(), currentImage.getSegmentID()));
             }
         }
 
-        OptionallyFilteredIdList objectIdList2 = new OptionallyFilteredIdList();
-        objectIdList2.setIds(objectList);
+        OptionallyFilteredIdList objectIdList = new OptionallyFilteredIdList();
+        objectIdList.setIds(objectList);
 
         MetadataApi metadataApi = new MetadataApi();
 
         Response.Listener<MediaObjectMetadataQueryResult> objectMetadataQueryResultListener = this::handleMediaObjectMetadataQueryResult;
 
-        metadataApi.findMetadataForObjectIdBatched(objectIdList2, objectMetadataQueryResultListener, this);
+        metadataApi.findMetadataForObjectIdBatched(objectIdList, objectMetadataQueryResultListener, this);
     }
 
     private void handleMediaObjectMetadataQueryResult(MediaObjectMetadataQueryResult mediaObjectMetadataQueryResult) {
@@ -600,7 +564,6 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
                                 assert currentImage != null;
                                 currentImage.setBearing(Integer.parseInt(metadataDescriptor.getValue()));
                                 break;
-
                         }
                         break;
                 }
@@ -617,33 +580,31 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         displayMarkersOnMap();
     }
 
+    @SuppressWarnings("ConstantConditions")
     private void displayMarkersOnMap() {
         if (mMap != null) {
             mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(getLayoutInflater()));
             mMap.setOnInfoWindowClickListener(marker -> {
-
-                if ((int) Utils.haversineDistance(latitude, longitude,
-                        marker.getPosition().latitude, marker.getPosition().longitude)
-                        < getResources().getInteger(R.integer.ar_distance)) {
-                    Intent intent = new Intent(this, ARActivity.class);
-                    intent.putExtra("path", marker.getTitle());
-                    intent.putExtra("lat", marker.getPosition().latitude);
-                    intent.putExtra("lon", marker.getPosition().longitude);
-                    intent.putExtra("bearing", (int) marker.getTag());
-                    startActivity(intent);
-                } else {
-                    Toast.makeText(this, "Too far away! Get closer!", Toast.LENGTH_LONG).show();
+                if (!marker.equals(locationPicker)) {
+                    if ((int) Utils.haversineDistance(latitude, longitude,
+                            marker.getPosition().latitude, marker.getPosition().longitude)
+                            < getResources().getInteger(R.integer.ar_distance)) {
+                        Intent intent = new Intent(this, ARActivity.class);
+                        intent.putExtra("path", marker.getTitle());
+                        intent.putExtra("lat", marker.getPosition().latitude);
+                        intent.putExtra("lon", marker.getPosition().longitude);
+                        intent.putExtra("bearing", (int) marker.getTag());
+                        startActivity(intent);
+                    } else {
+                        Toast.makeText(this, "Too far away! Get closer!", Toast.LENGTH_LONG).show();
+                    }
                 }
-
             });
 
             if (DataStorage.getInstance().getImageList() != null) {
                 for (HistoricalImage image : DataStorage.getInstance().getImageList()) {
                     LatLng latLng = new LatLng(image.getLatitude(), image.getLongitude());
-                    if (!(spacialQuery && ((int) Utils.haversineDistance(
-                            Double.parseDouble(latitudeEdit.getText().toString()),
-                            Double.parseDouble(longitudeEdit.getText().toString()),
-                            image.getLatitude(), image.getLongitude())) > VIEW_DISTANCE)) {
+                    if (image.getDistance() <= VIEW_DISTANCE) {
                         Marker marker = mMap.addMarker(new MarkerOptions().position(latLng)
                                 .title(image.getTitle()).snippet(image.getPath()));
                         assert marker != null;
@@ -665,17 +626,10 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         mMap = googleMap;
 
         if (getResources().getBoolean(R.bool.night_mode_on)) {
-            System.out.println("Test");
-            googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(
-                    this, R.raw.map_style_dark));
+            googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style_dark));
         } else {
-            System.out.println("Day");
-            googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(
-                    this, R.raw.maps_style));
+            googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.maps_style));
         }
-
-
-        mMap.setPadding(0, 400, 16, 0);
 
         if (ActivityCompat.checkSelfPermission(getLayoutInflater().getContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -683,10 +637,12 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
+
         mMap.setMyLocationEnabled(true);
+        mMap.setPadding(16, 16, 16, 16);
 
         LatLng basel = new LatLng(47.55963623772201, 7.588694683884673);
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(basel, 15));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(basel, 15));
 
         mMap.setOnMapClickListener(latLng -> {
             if (locationPicker != null) {
@@ -701,9 +657,9 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         });
 
         locationButton = mapView.findViewById(0x2);
-        if(locationButton != null)
+        if (locationButton != null) {
             locationButton.setVisibility(View.GONE);
-
+        }
     }
 
     @Override
@@ -733,6 +689,11 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
     @Override
     public void onDestroy() {
         super.onDestroy();
+        try {
+            getLayoutInflater().getContext().unregisterReceiver(mBroadcastReceiver);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
         mapView.onDestroy();
         Intent locationService = new Intent(this, LocationService.class);
         startService(locationService);
@@ -807,6 +768,18 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private class LocationReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action.equals(LocationService.BROADCAST_LOCATION)) {
+                latitude = intent.getDoubleExtra("Latitude", 0);
+                longitude = intent.getDoubleExtra("Longitude", 0);
+            }
         }
     }
 }

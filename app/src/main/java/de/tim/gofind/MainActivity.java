@@ -14,8 +14,12 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 
-import de.tim.gofind.search.ResultsActivity;
+import de.tim.gofind.search.SearchActivity;
 
+
+/**
+ * Launch Activity of the GoFind app, responsible for the app permissions and the splash screen.
+ */
 public class MainActivity extends AppCompatActivity {
 
     private ActivityResultLauncher<String[]> multiplePermissionActivityResultLauncher;
@@ -25,6 +29,10 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
 
+    /**
+     * Called when the activity is first created. Registers the permission activity launcher.
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,6 +50,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Launches the permission activity if permissions not granted.
+     */
     private void askPermissions() {
         if (!hasPermissions(PERMISSIONS)) {
             Log.d("PERMISSIONS", "Launching multiple contract permission launcher for ALL required permissions");
@@ -52,6 +63,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Checks if given permissions are granted.
+     * @param permissions permissions to check
+     * @return true/false
+     */
     private boolean hasPermissions(String[] permissions) {
         if (permissions != null) {
             for (String permission : permissions) {
@@ -66,6 +82,9 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    /**
+     * Method to set window flags based on the current ui mode. (fullscreen, status bar color)
+     */
     private void setFlags() {
         if (getResources().getBoolean(R.bool.night_mode_on)) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
@@ -88,8 +107,11 @@ public class MainActivity extends AppCompatActivity {
         askPermissions();
     }
 
+    /**
+     * Proceeds to the SearchActivity.
+     */
     private void displaySearchActivity() {
-        Intent searchIntent = new Intent(this, ResultsActivity.class);
+        Intent searchIntent = new Intent(this, SearchActivity.class);
         searchIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(searchIntent);
     }
