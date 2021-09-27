@@ -4,6 +4,12 @@ import static java.lang.Math.atan2;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+
+import java.io.ByteArrayOutputStream;
+
 public class Utils {
 
     public static double degreesToRadians(double angle) {
@@ -30,9 +36,27 @@ public class Utils {
 
         double y = cos(currentLatitudeRadians) * sin(destinationLatitudeRadians) -
                 sin(currentLatitudeRadians) * cos(destinationLatitudeRadians) * cos(deltaLongitude);
-        double x = sin(deltaLongitude) * cos(destinationLatitudeRadians) ;
+        double x = sin(deltaLongitude) * cos(destinationLatitudeRadians);
         double headingAngle = Math.toDegrees(atan2(x, y));
 
         return (headingAngle + 360) % 360;
     }
+
+    public static Bitmap fromBase64(String base64Str) throws IllegalArgumentException {
+        byte[] decodedBytes = Base64.decode(
+                base64Str.substring(base64Str.indexOf(",") + 1),
+                Base64.DEFAULT
+        );
+
+        return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
+    }
+
+    public static String toBase64(Bitmap bitmap) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+
+        return Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT);
+    }
+
+
 }

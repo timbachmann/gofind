@@ -1,30 +1,48 @@
 package de.tim.gofind.search;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
+import android.provider.MediaStore;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -36,17 +54,25 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
+import com.google.android.gms.maps.model.GroundOverlay;
+import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.shape.CornerFamily;
 import com.google.android.material.shape.MaterialShapeDrawable;
 import com.google.android.material.slider.RangeSlider;
+import com.google.android.material.slider.Slider;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 import org.openapitools.client.api.MetadataApi;
 import org.openapitools.client.api.ObjectApi;
@@ -67,12 +93,15 @@ import org.openapitools.client.model.SimilarityQueryResult;
 import org.openapitools.client.model.SimilarityQueryResultBatch;
 import org.openapitools.client.model.StringDoublePair;
 
+import java.io.FileDescriptor;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -85,7 +114,7 @@ import de.tim.gofind.utils.Utils;
 
 public class ResultsActivity extends AppCompatActivity implements OnMapReadyCallback, Response.ErrorListener {
 
-    private final int VIEW_DISTANCE = getResources().getInteger(R.integer.view_search_distance);
+    private final int VIEW_DISTANCE = 1000;
     private final HashMap<String, HistoricalImage> imageMap = new HashMap<>();
     private double latitude;
     private double longitude;
@@ -114,16 +143,40 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
     private LinearLayout temporalLayout;
     private LinearLayout imageLayout;
     private Marker locationPicker;
+    private GroundOverlay mapOverlay;
+    private FloatingActionButton layersFab;
+    private FloatingActionButton locationFab;
+    private FloatingActionButton cancelFab;
+    private ImageView locationButton;
+    private Slider mapOverlaySlider;
+    private ImageButton imageButton;
+    private ImageButton cameraButton;
+    private ImageView searchBitmapView;
+    private Bitmap searchBitmap;
+    private Uri image_uri;
     private boolean temporalQuery = false;
     private boolean spacialQuery = false;
     private boolean exampleQuery = false;
+    private MenuItem backgroundLocationPermission;
+    private static final int RESULT_LOAD_IMAGE = 123;
+    public static final int IMAGE_CAPTURE_CODE = 654;
+    private ActivityResultLauncher<String> permissionActivityResultLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         binding = ActivityResultsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        ActivityResultContracts.RequestPermission requestPermissionsContract = new ActivityResultContracts.RequestPermission();
+        permissionActivityResultLauncher = registerForActivityResult(requestPermissionsContract, isGranted -> {
+            Log.d("PERMISSIONS", "Launcher result: " + isGranted.toString());
+            if (!isGranted) {
+                Log.d("PERMISSIONS", "Permission ACCESS_BACKGROUND_LOCATION was not granted, launching again...");
+                permissionActivityResultLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+            }
+            backgroundLocationPermission.setChecked(isGranted);
+        });
 
         setupNotificationChannel();
         initializeViews(savedInstanceState);
@@ -185,6 +238,13 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         spacialLayout = findViewById(R.id.location_layout);
         temporalLayout = findViewById(R.id.temporal_layout);
         imageLayout = findViewById(R.id.image_layout);
+        layersFab = findViewById(R.id.layers_fab);
+        locationFab = findViewById(R.id.location_fab);
+        cancelFab = findViewById(R.id.cancel_fab);
+        mapOverlaySlider = findViewById(R.id.map_overlay_slider);
+        imageButton = findViewById(R.id.image_button);
+        cameraButton = findViewById(R.id.camera_button);
+        searchBitmapView = findViewById(R.id.search_image_thumbnail);
 
         MaterialShapeDrawable materialShapeDrawable = (MaterialShapeDrawable) toolbar.getBackground();
         materialShapeDrawable.setShapeAppearanceModel(materialShapeDrawable.getShapeAppearanceModel()
@@ -193,7 +253,114 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
                 .build());
     }
 
+    private void openCamera() {
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.TITLE, "New Picture");
+        values.put(MediaStore.Images.Media.DESCRIPTION, "From the Camera");
+        image_uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, image_uri);
+        startActivityForResult(cameraIntent, IMAGE_CAPTURE_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == IMAGE_CAPTURE_CODE && resultCode == RESULT_OK){
+            searchBitmap = uriToBitmap(image_uri);
+        }
+
+        if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && data != null){
+            image_uri = data.getData();
+            searchBitmap = uriToBitmap(image_uri);
+        }
+
+        searchBitmapView.setRotation(90);
+        searchBitmapView.setImageBitmap(searchBitmap);
+    }
+
+    private Bitmap uriToBitmap(Uri selectedFileUri) {
+        try {
+            ParcelFileDescriptor parcelFileDescriptor =
+                    getContentResolver().openFileDescriptor(selectedFileUri, "r");
+            FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
+            Bitmap image = BitmapFactory.decodeFileDescriptor(fileDescriptor);
+
+            parcelFileDescriptor.close();
+            return image;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return  null;
+    }
+
     private void setUpListeners() {
+
+        imageButton.setOnClickListener(view -> {
+            Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            startActivityForResult(galleryIntent, RESULT_LOAD_IMAGE);
+        });
+
+        cameraButton.setOnClickListener(view -> openCamera());
+
+        mapOverlaySlider.addOnChangeListener((slider, value, fromUser) -> mapOverlay.setTransparency(1-value));
+
+        cancelFab.setOnClickListener(view -> {
+            if (mapOverlay != null) {
+                mapOverlay.remove();
+                cancelFab.setVisibility(View.INVISIBLE);
+                mapOverlaySlider.setVisibility(View.GONE);
+            }
+        });
+
+        locationFab.setOnClickListener(view -> {
+            if(mMap != null) {
+                if(locationButton != null)
+                    locationButton.callOnClick();
+            }
+        });
+
+        layersFab.setOnClickListener(view -> {
+            AlertDialog materialAlertDialog =
+                    new MaterialAlertDialogBuilder(ResultsActivity.this)
+                            .setTitle("Historical Maps")
+                            .setItems(HistoricalMaps.getMapNameList(), (dialogInterface, i) -> {
+                                if (mMap != null) {
+                                    if (mapOverlay != null) mapOverlay.remove();
+                                    HistoricalMap currentMap = HistoricalMaps.getMapList().get(i);
+                                    LatLng newarkLatLng = new LatLng(47.55751690300252, 7.589010670781135);
+
+                                    GroundOverlayOptions groundOverlayOptions = new GroundOverlayOptions();
+
+                                    Picasso.get().load(currentMap.getPath()).into(new Target() {
+                                        @Override
+                                        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+
+                                            groundOverlayOptions.bearing(220.0f);
+                                            groundOverlayOptions.position(newarkLatLng, bitmap.getWidth() * 1.5f, bitmap.getHeight() * 1.5f);
+                                            groundOverlayOptions.image(BitmapDescriptorFactory.fromBitmap(bitmap));
+                                            mapOverlay = mMap.addGroundOverlay(groundOverlayOptions);
+                                            assert mapOverlay != null;
+                                            mapOverlay.setTransparency(1-mapOverlaySlider.getValue());
+                                            cancelFab.setVisibility(View.VISIBLE);
+                                            mapOverlaySlider.setVisibility(View.VISIBLE);
+                                        }
+
+                                        @Override
+                                        public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+
+                                        }
+
+                                        @Override
+                                        public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                                        }
+                                    });
+                                }
+                            }).show();
+        });
+
         spacialCheckBox.setOnCheckedChangeListener((compoundButton, enabled) -> {
             spacialLayout.setVisibility(enabled ? View.VISIBLE : View.INVISIBLE);
             if (locationPicker != null && !enabled) locationPicker.remove();
@@ -216,6 +383,9 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         });
 
         currentLocation.setOnClickListener(view -> {
+            if (!LocationService.isServiceRunning) {
+                startLocationServiceAndBind();
+            }
             if (latitude != 0 && longitude != 0) {
                 latitudeEdit.setText(String.valueOf(latitude));
                 longitudeEdit.setText(String.valueOf(longitude));
@@ -241,7 +411,8 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
 
     private void startLocationServiceAndBind() {
         Intent locationService = new Intent(this, LocationService.class);
-        startService(locationService);
+        locationService.setAction("START");
+        startForegroundService(locationService);
 
         mBroadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -304,11 +475,11 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
             queryTerms.add(queryTerm);
         }
 
-        if (exampleQuery) {
+        if (exampleQuery && searchBitmap != null) {
             QueryTerm queryTerm = new QueryTerm();
-            queryTerm.setCategories(Collections.singletonList("temporaldistance"));
-            queryTerm.setType(QueryTerm.TypeEnum.TIME);
-            queryTerm.setData("");
+            queryTerm.setCategories(Collections.singletonList("distance"));
+            queryTerm.setType(QueryTerm.TypeEnum.IMAGE);
+            queryTerm.setData(Utils.toBase64(searchBitmap));
             queryTerms.add(queryTerm);
         }
 
@@ -488,6 +659,7 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         }
     }
 
+    @SuppressLint("ResourceType")
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
@@ -517,7 +689,9 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(basel, 15));
 
         mMap.setOnMapClickListener(latLng -> {
-            mMap.clear();
+            if (locationPicker != null) {
+                locationPicker.remove();
+            }
             locationPicker = mMap.addMarker(new MarkerOptions().position(latLng));
             bottomSheet.setVisibility(View.VISIBLE);
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
@@ -525,6 +699,18 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
             longitudeEdit.setText(String.valueOf(latLng.longitude));
             spacialCheckBox.setChecked(true);
         });
+
+        locationButton = mapView.findViewById(0x2);
+        if(locationButton != null)
+            locationButton.setVisibility(View.GONE);
+
+    }
+
+    @Override
+    public void onBackPressed() {
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        bottomSheet.setVisibility(View.INVISIBLE);
+        super.onBackPressed();
     }
 
     @Override
@@ -534,8 +720,8 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
 
     @Override
     public void onResume() {
-        mapView.onResume();
         super.onResume();
+        mapView.onResume();
     }
 
     @Override
@@ -548,6 +734,8 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
     public void onDestroy() {
         super.onDestroy();
         mapView.onDestroy();
+        Intent locationService = new Intent(this, LocationService.class);
+        startService(locationService);
     }
 
     @Override
@@ -563,6 +751,27 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
         listMenuItem = menu.getItem(1);
         menu.getItem(1).setIconTintList(ColorStateList.valueOf(getColor(R.color.textColorPrimary)));
         menu.getItem(2).setIconTintList(ColorStateList.valueOf(getColor(R.color.textColorPrimary)));
+        Objects.requireNonNull(toolbar.getOverflowIcon()).setTintList(ColorStateList.valueOf(getColor(R.color.textColorPrimary)));
+        backgroundLocationPermission = menu.getItem(2);
+        backgroundLocationPermission.setChecked(hasBackgroundLocationPermission());
+        return true;
+    }
+
+    private void askBackgroundLocationPermission() {
+        if (!hasBackgroundLocationPermission()) {
+            Log.d("PERMISSIONS", "Launching contract permission launcher for ACCESS_BACKGROUND_LOCATION");
+            permissionActivityResultLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+        } else {
+            Log.d("PERMISSIONS", "Permission is already granted");
+        }
+    }
+
+    private boolean hasBackgroundLocationPermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            Log.d("PERMISSIONS", "Permission is not granted: " + Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+            return false;
+        }
+        Log.d("PERMISSIONS", "Permission already granted: " + Manifest.permission.ACCESS_BACKGROUND_LOCATION);
         return true;
     }
 
@@ -578,7 +787,6 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
                     bottomSheet.setVisibility(View.VISIBLE);
                     bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
                 }
-
                 return true;
             case R.id.list_display:
                 if (mapView.getVisibility() == View.VISIBLE) {
@@ -590,12 +798,15 @@ public class ResultsActivity extends AppCompatActivity implements OnMapReadyCall
                     listView.setVisibility(View.INVISIBLE);
                     item.setIcon(R.drawable.ic_baseline_format_list_bulleted_24);
                 }
-
+                return true;
+            case R.id.background_location_permission:
+                item.setChecked(!item.isChecked());
+                if (item.isChecked()) {
+                    askBackgroundLocationPermission();
+                }
+                return true;
             default:
-                // If we got here, the user's action was not recognized.
-                // Invoke the superclass to handle it.
                 return super.onOptionsItemSelected(item);
-
         }
     }
 }

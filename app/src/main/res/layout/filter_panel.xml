@@ -272,26 +272,14 @@
                 app:layout_constraintTop_toBottomOf="@id/image_text"
                 android:visibility="gone">
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/outlinedTextField3"
+                <ImageView
+                    android:id="@+id/search_image_thumbnail"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/image_path"
-                    android:layout_marginEnd="4dp"
+                    android:layout_height="152dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/rounded_shape"
                     android:layout_weight=".7"
-                    app:boxStrokeColor="@color/colorSecondary"
-                    app:hintTextColor="@color/colorSecondary"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/image_path"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textCursorDrawable="@null"
-                        android:textColor="@color/textColorPrimary"
-                        android:inputType="text" />
-
-                </com.google.android.material.textfield.TextInputLayout>
+                    android:src="@drawable/ic_twotone_image_24" />
 
                 <ImageButton
                     android:id="@+id/image_button"

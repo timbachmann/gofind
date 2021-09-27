@@ -18,9 +18,10 @@
       android:tint="@color/textColorPrimary" />
 
   <item
-      android:id="@+id/settings" android:title="Settings"
-      android:icon="@drawable/ic_baseline_settings_24"
-      app:showAsAction="ifRoom"
+      android:id="@+id/background_location_permission"
+      android:title="Background Location Permission"
+      android:checkable="true"
+      app:showAsAction="never"
       android:tint="@color/textColorPrimary" />
 
 </menu>

@@ -156,7 +156,7 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
             float[] rotation = {0, 0, 0, 1};
             Anchor anchor = session.createAnchor(new Pose(position, rotation));*/
 
-            if (!overlayViewEnabled && (int)orientation >= (int) azimuthToTarget - 1 && (int) orientation <= (int) azimuthToTarget + 1) {
+            if (!overlayViewEnabled && (int) orientation == (int) azimuthToTarget) {
                 arrowView.setImageResource(android.R.color.transparent);
                 int distance = (int) Utils.haversineDistance(latitude, longitude, targetLat, targetLon);
                 Vector3 cameraPos = arFragment.getArSceneView().getScene().getCamera().getWorldPosition();
@@ -185,9 +185,9 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
                 node.setLocalRotation(localRotation);
                 imageDrawn = true;
 
-            } else if (!overlayViewEnabled && !imageDrawn && (int) orientation < (int) azimuthToTarget - 1) {
+            } else if (!overlayViewEnabled && !imageDrawn && (int) orientation < (int) azimuthToTarget) {
                 arrowView.setImageResource(R.drawable.ic_baseline_keyboard_double_arrow_right_24);
-            } else if (!overlayViewEnabled && !imageDrawn && (int) orientation > (int) azimuthToTarget + 1) {
+            } else if (!overlayViewEnabled && !imageDrawn && (int) orientation > (int) azimuthToTarget) {
                 arrowView.setImageResource(R.drawable.ic_baseline_keyboard_double_arrow_left_24);
             }
 
