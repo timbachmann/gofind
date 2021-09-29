@@ -35,7 +35,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 public class DefaultApi {
-  String basePath = "http://city-stories.dmi.unibas.ch:5105";
+  String basePath = "http://city-stories.dmi.unibas.ch:5555";
   ApiInvoker apiInvoker = ApiInvoker.getInstance();
 
   public void addHeader(String key, String value) {

@@ -1,22 +1,18 @@
 plugins {
     id 'com.android.application'
     id 'org.openapi.generator' version '5.1.1'
-
 }
 
 android {
     compileSdk 31
-
     defaultConfig {
         applicationId "de.tim.gofind"
         minSdk 29
         targetSdk 31
         versionCode 1
         versionName "1.0"
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-
     buildTypes {
         release {
             minifyEnabled false
@@ -32,7 +28,6 @@ android {
     }
     packagingOptions {
         pickFirst "META-INF/DEPENDENCIES"
-
     }
 }
 
@@ -59,6 +54,7 @@ dependencies {
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation "androidx.navigation:navigation-fragment:2.3.5"
     implementation "androidx.navigation:navigation-ui:2.3.5"
+    //Do not use newer versions of com.google.ar.sceneform.ux
     implementation 'com.google.ar.sceneform.ux:sceneform-ux:1.15.0'
 
 }
@@ -66,7 +62,7 @@ dependencies {
 openApiGenerate {
     generatorName = "android"
     inputSpec = "$rootDir/app/src/main/res/config.json".toString()
-    outputDir = "$rootDir/cineast-client2".toString()
+    outputDir = "$rootDir/cineast-client".toString()
     configOptions = [
             useAndroidMavenGradlePlugin:"false",
             compileSdk:"31",
@@ -75,7 +71,6 @@ openApiGenerate {
             androidGradleVersion:"7.0.2",
             androidBuildToolsVersion:"31"
     ]
-
 }
 
 allprojects {

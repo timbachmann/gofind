@@ -108,6 +108,8 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
     public static final String NOTIFICATION_ID = "CHANNEL_GO_FIND";
     private double latitude;
     private double longitude;
+    private double searchedLat;
+    private double searchedLon;
     private ListView listView;
     private GoogleMap mMap = null;
     private MapView mapView;
@@ -150,6 +152,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
     private MenuItem backgroundLocationPermission;
     private static final int RESULT_LOAD_IMAGE = 123;
     public static final int IMAGE_CAPTURE_CODE = 654;
+    private final String thumbnailBasePath = "http://city-stories.dmi.unibas.ch:5555/thumbnails/%s";
     private ActivityResultLauncher<String> permissionActivityResultLauncher;
 
     @Override
@@ -167,12 +170,6 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
             }
             backgroundLocationPermission.setChecked(isGranted);
         });
-
-        MaterialShapeDrawable materialShapeDrawable = (MaterialShapeDrawable) toolbar.getBackground();
-        materialShapeDrawable.setShapeAppearanceModel(materialShapeDrawable.getShapeAppearanceModel()
-                .toBuilder()
-                .setAllCorners(CornerFamily.ROUNDED, 104)
-                .build());
 
         setupNotificationChannel();
         initializeViews(savedInstanceState);
@@ -244,6 +241,12 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         imageButton = findViewById(R.id.image_button);
         cameraButton = findViewById(R.id.camera_button);
         searchBitmapView = findViewById(R.id.search_image_thumbnail);
+
+        MaterialShapeDrawable materialShapeDrawable = (MaterialShapeDrawable) toolbar.getBackground();
+        materialShapeDrawable.setShapeAppearanceModel(materialShapeDrawable.getShapeAppearanceModel()
+                .toBuilder()
+                .setAllCorners(CornerFamily.ROUNDED, 104)
+                .build());
     }
 
     private void setUpListeners() {
@@ -255,7 +258,11 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
         cameraButton.setOnClickListener(view -> openCamera());
 
-        mapOverlaySlider.addOnChangeListener((slider, value, fromUser) -> mapOverlay.setTransparency(1 - value));
+        mapOverlaySlider.addOnChangeListener((slider, value, fromUser) -> {
+            if (mapOverlay != null) {
+                mapOverlay.setTransparency(1 - value);
+            }
+        });
 
         cancelFab.setOnClickListener(view -> {
             if (mapOverlay != null) {
@@ -426,6 +433,8 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
             queryTerm.setCategories(Collections.singletonList("spatialdistance"));
             queryTerm.setType(QueryTerm.TypeEnum.LOCATION);
             queryTerm.setData(String.format("[%s,%s]", latitudeEdit.getText(), longitudeEdit.getText()));
+            searchedLat = Double.parseDouble(String.valueOf(latitudeEdit.getText()));
+            searchedLon = Double.parseDouble(String.valueOf(longitudeEdit.getText()));
             queryTerms.add(queryTerm);
         }
 
@@ -513,13 +522,11 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         for (MediaObjectDescriptor objectDescriptor : mediaObjectQueryResult.getContent()) {
             objectList.add(objectDescriptor.getObjectId());
 
-            String basePath = "http://10.34.58.145/thumbnails/%s/%s.png";
-
             if (imageMap.containsKey(objectDescriptor.getObjectId())) {
                 HistoricalImage currentImage = imageMap.get(objectDescriptor.getObjectId());
                 assert currentImage != null;
                 currentImage.setTitle(objectDescriptor.getName());
-                currentImage.setPath(String.format(basePath, objectDescriptor.getObjectId(), currentImage.getSegmentID()));
+                currentImage.setPath(String.format(thumbnailBasePath, currentImage.getSegmentID()));
             }
         }
 
@@ -571,7 +578,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         }
         ArrayList<HistoricalImage> toOrder = new ArrayList<>(imageMap.values());
         for (HistoricalImage historicalImage : toOrder) {
-            historicalImage.setDistance((int) Utils.haversineDistance(latitude, longitude, historicalImage.getLatitude(), historicalImage.getLongitude()));
+            historicalImage.setDistance((int) Utils.haversineDistance(searchedLat, searchedLon, historicalImage.getLatitude(), historicalImage.getLongitude()));
         }
         DataStorage.getInstance().setImageList(toOrder.stream().sorted(Comparator.comparing(HistoricalImage::getDistance)).collect(Collectors.toList()));
         SearchListAdapter adapter = new SearchListAdapter(getLayoutInflater(), DataStorage.getInstance().getImageList());
@@ -606,15 +613,14 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                     LatLng latLng = new LatLng(image.getLatitude(), image.getLongitude());
                     if (image.getDistance() <= VIEW_DISTANCE) {
                         Marker marker = mMap.addMarker(new MarkerOptions().position(latLng)
-                                .title(image.getTitle()).snippet(image.getPath()));
+                                .title(image.getObjectID()).snippet(image.getPath()));
                         assert marker != null;
                         marker.setTag(image.getBearing());
                         image.setMarker(marker);
                     }
                 }
                 if (spacialQuery) {
-                    drawCircle(new LatLng(Double.parseDouble(latitudeEdit.getText().toString()),
-                            Double.parseDouble(longitudeEdit.getText().toString())));
+                    drawCircle(new LatLng(searchedLat, searchedLon));
                 }
             }
         }

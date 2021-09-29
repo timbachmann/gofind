@@ -72,7 +72,7 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
         Intent intent = getIntent();
         ImageView arImageView = new ImageView(getApplicationContext());
         String imagePath = intent.getStringExtra("path");
-        String fullPath = String.format("http://10.34.58.145/objects/%s", imagePath);
+        String fullPath = String.format("http://city-stories.dmi.unibas.ch:5555/objects/%s", imagePath);
         targetLat = intent.getDoubleExtra("lat", 0);
         targetLon = intent.getDoubleExtra("lon", 0);
         bearing = intent.getIntExtra("bearing", 0);
