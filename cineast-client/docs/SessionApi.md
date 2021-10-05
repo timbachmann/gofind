@@ -107,8 +107,6 @@ No authorization required
 
 Extract new item
 
-TODO
-
 ### Example
 
 ```java

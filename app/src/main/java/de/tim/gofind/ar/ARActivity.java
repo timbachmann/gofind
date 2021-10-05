@@ -37,6 +37,9 @@ import de.tim.gofind.utils.LocationService;
 import de.tim.gofind.utils.OrientationService;
 import de.tim.gofind.utils.Utils;
 
+/**
+ *
+ */
 public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListener {
 
     private ArFragment arFragment;
@@ -60,8 +63,12 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
     private Slider overlaySlider;
     private boolean imageDrawn = false;
     private boolean overlayViewEnabled = false;
+    private final String BASE_PATH = "http://city-stories.dmi.unibas.ch:5555/objects/%s";
 
-
+    /**
+     *
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,7 +79,7 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
         Intent intent = getIntent();
         ImageView arImageView = new ImageView(getApplicationContext());
         String imagePath = intent.getStringExtra("path");
-        String fullPath = String.format("http://city-stories.dmi.unibas.ch:5555/objects/%s", imagePath);
+        String fullPath = String.format(BASE_PATH, imagePath);
         targetLat = intent.getDoubleExtra("lat", 0);
         targetLon = intent.getDoubleExtra("lon", 0);
         bearing = intent.getIntExtra("bearing", 0);
@@ -97,6 +104,9 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
         overlaySlider.addOnChangeListener((slider, value, fromUser) -> overlayView.setAlpha(value));
     }
 
+    /**
+     *
+     */
     private void onOverlayFabClick() {
         if (!overlayViewEnabled) {
             overlayView.setVisibility(View.VISIBLE);
@@ -119,6 +129,10 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
         }
     }
 
+    /**
+     *
+     * @param frameTime
+     */
     @Override
     public void onUpdate(FrameTime frameTime) {
         if (arFragment.getArSceneView().getArFrame() == null) {
@@ -170,7 +184,9 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
         }
     }
 
-
+    /**
+     *
+     */
     @Override
     public void onDestroy() {
         try {
@@ -184,6 +200,9 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
         binding = null;
     }
 
+    /**
+     *
+     */
     private void startLocationServiceAndBind() {
         //Location service
         Intent locationService = new Intent(this, LocationService.class);
@@ -200,8 +219,16 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
         getLayoutInflater().getContext().registerReceiver(mBroadcastReceiverOrientation, orientationFilter);
     }
 
+    /**
+     *
+     */
     private class LocationOrientationReceiver extends BroadcastReceiver {
 
+        /**
+         *
+         * @param context
+         * @param intent
+         */
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();

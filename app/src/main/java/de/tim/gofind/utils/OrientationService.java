@@ -14,12 +14,18 @@ import android.view.WindowManager;
 
 import de.tim.gofind.search.DataStorage;
 
+/**
+ * TODO
+ */
 public class OrientationService extends Service implements SensorEventListener {
 
     public static final String BROADCAST_ORIENTATION = "ORIENTATION";
     private WindowManager windowManager;
     private Intent intent;
 
+    /**
+     * TODO
+     */
     @Override
     public void onCreate() {
         super.onCreate();
@@ -35,6 +41,10 @@ public class OrientationService extends Service implements SensorEventListener {
         return null;
     }
 
+    /**
+     * TODO
+     * @param event
+     */
     @Override
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()) {
@@ -48,6 +58,10 @@ public class OrientationService extends Service implements SensorEventListener {
         }
     }
 
+    /**
+     * TODO
+     * @param rotation
+     */
     @SuppressWarnings("SuspiciousNameCombination")
     private void processSensorOrientation(float[] rotation) {
         float[] rotationMatrix = new float[9];
@@ -87,6 +101,9 @@ public class OrientationService extends Service implements SensorEventListener {
         sendBroadcast(intent);
     }
 
+    /**
+     * TODO
+     */
     @Override
     public void onDestroy() {
         super.onDestroy();

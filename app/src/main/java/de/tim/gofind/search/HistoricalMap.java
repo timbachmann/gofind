@@ -1,5 +1,8 @@
 package de.tim.gofind.search;
 
+/**
+ * TODO
+ */
 public class HistoricalMap {
 
     private String name;
@@ -8,10 +11,6 @@ public class HistoricalMap {
     private int width;
     private int height;
     private float scaling;
-
-    public HistoricalMap() {
-
-    }
 
     public HistoricalMap(String name, String path) {
         this.name = name;

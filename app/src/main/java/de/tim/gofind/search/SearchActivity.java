@@ -1,5 +1,7 @@
 package de.tim.gofind.search;
 
+import static android.content.ContentValues.TAG;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -101,6 +103,10 @@ import de.tim.gofind.utils.CustomInfoWindowAdapter;
 import de.tim.gofind.utils.LocationService;
 import de.tim.gofind.utils.Utils;
 
+/**
+ * Main Activity of the GoFind Application and inflates layout activity_search and filter_panel.
+ * Responsible for displaying the MapView and initiating/handling cineast-client queries and responses.
+ */
 public class SearchActivity extends AppCompatActivity implements OnMapReadyCallback, Response.ErrorListener {
 
     private final int VIEW_DISTANCE = 1000;
@@ -155,6 +161,11 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
     private final String thumbnailBasePath = "http://city-stories.dmi.unibas.ch:5555/thumbnails/%s";
     private ActivityResultLauncher<String> permissionActivityResultLauncher;
 
+    /**
+     * Called when the activity is first created. Registers the permission activity launcher for
+     * ACCESS_BACKGROUND_LOCATION and initiates setup process.
+     * @param savedInstanceState Previous saved dynamic instance state of activity
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -180,6 +191,9 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         startLocationServiceAndBind();
     }
 
+    /**
+     * Notification channel setup, required since Android 8.0 (API level 26)
+     */
     private void setupNotificationChannel() {
         CharSequence name = getString(R.string.app_name);
         String description = getString(R.string.notification_channel);
@@ -209,6 +223,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         }
     }
 
+    /**
+     * Assigns all views to their variables and creates rounded toolbar.
+     * @param savedInstanceState Previous saved dynamic instance state of activity
+     */
     private void initializeViews(Bundle savedInstanceState) {
         toolbar = findViewById(R.id.toolbar);
         bottomSheet = findViewById(R.id.bottom_navigation_container);
@@ -249,6 +267,9 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                 .build());
     }
 
+    /**
+     * Setup of all the click listeners
+     */
     private void setUpListeners() {
 
         imageButton.setOnClickListener(view -> {
@@ -325,6 +346,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         });
     }
 
+    /**
+     * Click listener for HistoricalMapsDialog, loading and displaying the historical maps.
+     * @param position Position of historical map in dialog.
+     */
     private void onHistoricalMapsDialogClick(int position) {
         if (mMap != null) {
             if (mapOverlay != null) {
@@ -362,6 +387,9 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         }
     }
 
+    /**
+     * Opens camera and stores image in Pictures folder of smartphone.
+     */
     private void openCamera() {
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.TITLE, "New Picture");
@@ -372,6 +400,13 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         startActivityForResult(cameraIntent, IMAGE_CAPTURE_CODE);
     }
 
+    /**
+     * Called after an image was taken or loaded from camera roll.
+     * Sets the image for new cineast request and displays it in the {@link de.tim.gofind.R.layout#filter_panel}
+     * @param requestCode Code of the original request (RESULT_LOAD_IMAGE/IMAGE_CAPTURE_CODE)
+     * @param resultCode Code if the loading process was successful
+     * @param data Data Intent of result
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -389,6 +424,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         searchBitmapView.setImageBitmap(searchBitmap);
     }
 
+    /**
+     * Called when the system UI mode changes, restarts Map {@link #mMap} to apply new mode to Map.
+     * @param newConfig
+     */
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -396,6 +435,9 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         mapView.getMapAsync(this);
     }
 
+    /**
+     * Registers BroadcastReceiver {@link LocationReceiver} to receive locations updates.
+     */
     private void startLocationServiceAndBind() {
         Intent locationService = new Intent(this, LocationService.class);
         locationService.setAction(LocationService.ACTION_START);
@@ -407,6 +449,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         getLayoutInflater().getContext().registerReceiver(mBroadcastReceiver, locationFilter);
     }
 
+    /**
+     * Method to draw a circle on {@link #mMap} with radius {@link #VIEW_DISTANCE}
+     * @param point Center point of circle
+     */
     private void drawCircle(LatLng point) {
         CircleOptions circleOptions = new CircleOptions();
         circleOptions.center(point);
@@ -417,6 +463,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         locationCircle = mMap.addCircle(circleOptions);
     }
 
+    /**
+     * Called when {@link #searchButton} is clicked, performs cineast request with options
+     * specified in {@link de.tim.gofind.R.layout#filter_panel}
+     */
     private void handleSearchClick() {
         imageMap.clear();
         if (locationCircle != null) {
@@ -453,7 +503,13 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
             queryTerm.setCategories(Collections.singletonList("edge"));
             queryTerm.setType(QueryTerm.TypeEnum.IMAGE);
             queryTerm.setData(Utils.toBase64(searchBitmap));
+            System.out.println(Utils.toBase64(searchBitmap));
             queryTerms.add(queryTerm);
+        }
+
+        if (!spacialQuery) {
+            searchedLat = latitude;
+            searchedLon = longitude;
         }
 
         QueryComponent queryComponent = new QueryComponent();
@@ -469,6 +525,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     }
 
+    /**
+     * Called when SimilarityQueryResultBatch is received
+     * @param response
+     */
     private void handleSimilarityQueryResult(SimilarityQueryResultBatch response) {
         mMap.clear();
         listMenuItem.setVisible(true);
@@ -495,6 +555,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         segmentApi.findSegmentByIdBatched(idList, segmentQueryResultListener, this);
     }
 
+    /**
+     * TODO
+     * @param mediaSegmentQueryResult
+     */
     private void handleMediaSegmentQueryResult(MediaSegmentQueryResult mediaSegmentQueryResult) {
         List<String> objectKeyList = new ArrayList<>();
         for (MediaSegmentDescriptor segmentDescriptor : mediaSegmentQueryResult.getContent()) {
@@ -517,6 +581,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         objectApi.findObjectsByIdBatched(objectIdList, objectQueryResultListener, this);
     }
 
+    /**
+     * TODO
+     * @param mediaObjectQueryResult
+     */
     private void handleMediaObjectQueryResult(MediaObjectQueryResult mediaObjectQueryResult) {
         List<String> objectList = new ArrayList<>();
         for (MediaObjectDescriptor objectDescriptor : mediaObjectQueryResult.getContent()) {
@@ -540,6 +608,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         metadataApi.findMetadataForObjectIdBatched(objectIdList, objectMetadataQueryResultListener, this);
     }
 
+    /**
+     * TODO
+     * @param mediaObjectMetadataQueryResult
+     */
     private void handleMediaObjectMetadataQueryResult(MediaObjectMetadataQueryResult mediaObjectMetadataQueryResult) {
         for (MediaObjectMetadataDescriptor metadataDescriptor : mediaObjectMetadataQueryResult.getContent()) {
             if (imageMap.containsKey(metadataDescriptor.getObjectId())) {
@@ -578,7 +650,14 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         }
         ArrayList<HistoricalImage> toOrder = new ArrayList<>(imageMap.values());
         for (HistoricalImage historicalImage : toOrder) {
-            historicalImage.setDistance((int) Utils.haversineDistance(searchedLat, searchedLon, historicalImage.getLatitude(), historicalImage.getLongitude()));
+            System.out.printf("%s, %s", historicalImage.getLatitude(), historicalImage.getLongitude());
+            if (historicalImage.getLatitude() == 0 || historicalImage.getLongitude() == 0) {
+                historicalImage.setLatitude(searchedLat);
+                historicalImage.setLongitude(searchedLon);
+                historicalImage.setDistance(0);
+            } else {
+                historicalImage.setDistance((int) Utils.haversineDistance(searchedLat, searchedLon, historicalImage.getLatitude(), historicalImage.getLongitude()));
+            }
         }
         DataStorage.getInstance().setImageList(toOrder.stream().sorted(Comparator.comparing(HistoricalImage::getDistance)).collect(Collectors.toList()));
         SearchListAdapter adapter = new SearchListAdapter(getLayoutInflater(), DataStorage.getInstance().getImageList());
@@ -587,6 +666,9 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         displayMarkersOnMap();
     }
 
+    /**
+     * TODO
+     */
     @SuppressWarnings("ConstantConditions")
     private void displayMarkersOnMap() {
         if (mMap != null) {
@@ -611,7 +693,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
             if (DataStorage.getInstance().getImageList() != null) {
                 for (HistoricalImage image : DataStorage.getInstance().getImageList()) {
                     LatLng latLng = new LatLng(image.getLatitude(), image.getLongitude());
-                    if (image.getDistance() <= VIEW_DISTANCE) {
+                    if (image.getDistance() <= VIEW_DISTANCE || !spacialQuery) {
                         Marker marker = mMap.addMarker(new MarkerOptions().position(latLng)
                                 .title(image.getObjectID()).snippet(image.getPath()));
                         assert marker != null;
@@ -626,6 +708,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         }
     }
 
+    /**
+     * TODO
+     * @param googleMap
+     */
     @SuppressLint("ResourceType")
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
@@ -668,6 +754,9 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         }
     }
 
+    /**
+     * TODO
+     */
     @Override
     public void onBackPressed() {
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
@@ -675,23 +764,37 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         super.onBackPressed();
     }
 
+    /**
+     * TODO
+     * @param error
+     */
     @Override
     public void onErrorResponse(VolleyError error) {
-        System.out.println(error.toString());
+        Toast.makeText(getApplicationContext(), error.toString(), Toast.LENGTH_LONG).show();
+        Log.e(TAG,error.toString());
     }
 
+    /**
+     * TODO
+     */
     @Override
     public void onResume() {
         super.onResume();
         mapView.onResume();
     }
 
+    /**
+     * TODO
+     */
     @Override
     public void onPause() {
         super.onPause();
         mapView.onPause();
     }
 
+    /**
+     * TODO
+     */
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -705,12 +808,20 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         startService(locationService);
     }
 
+    /**
+     * TODO
+     */
     @Override
     public void onLowMemory() {
         super.onLowMemory();
         mapView.onLowMemory();
     }
 
+    /**
+     * TODO
+     * @param menu
+     * @return
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.settings_menu, menu);
@@ -724,6 +835,9 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         return true;
     }
 
+    /**
+     * TODO
+     */
     private void askBackgroundLocationPermission() {
         if (!hasBackgroundLocationPermission()) {
             Log.d("PERMISSIONS", "Launching contract permission launcher for ACCESS_BACKGROUND_LOCATION");
@@ -733,6 +847,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         }
     }
 
+    /**
+     * TODO
+     * @return
+     */
     private boolean hasBackgroundLocationPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.d("PERMISSIONS", "Permission is not granted: " + Manifest.permission.ACCESS_BACKGROUND_LOCATION);
@@ -742,6 +860,11 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         return true;
     }
 
+    /**
+     * TODO
+     * @param item
+     * @return
+     */
     @SuppressLint("NonConstantResourceId")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -777,8 +900,16 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         }
     }
 
+    /**
+     *
+     */
     private class LocationReceiver extends BroadcastReceiver {
 
+        /**
+         * TODO
+         * @param context
+         * @param intent
+         */
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();

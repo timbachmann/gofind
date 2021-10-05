@@ -11,6 +11,9 @@ import com.squareup.picasso.Picasso;
 import java.util.List;
 import de.tim.gofind.R;
 
+/**
+ * TODO
+ */
 public class SearchListAdapter extends ArrayAdapter<HistoricalImage> {
 
     private final LayoutInflater inflater;
@@ -22,6 +25,13 @@ public class SearchListAdapter extends ArrayAdapter<HistoricalImage> {
         this.historicalImageList = historicalImageList;
     }
 
+    /**
+     * TODO
+     * @param position
+     * @param convertView
+     * @param parent
+     * @return
+     */
     @SuppressLint("InflateParams")
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
@@ -49,6 +59,9 @@ public class SearchListAdapter extends ArrayAdapter<HistoricalImage> {
         return convertView;
     }
 
+    /**
+     * TODO
+     */
     private static class ViewHolder {
         TextView titleText;
         TextView dateText;

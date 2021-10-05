@@ -16,9 +16,10 @@ import android.view.WindowManager;
 
 import de.tim.gofind.search.SearchActivity;
 
-
 /**
- * Launch Activity of the GoFind app, responsible for the app permissions and the splash screen.
+ * Launch Activity of the GoFind app, responsible for the app permissions
+ * and the splash screen (@drawable/splash_background_light or _dark).
+ * Has no own activity layout.
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -31,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Called when the activity is first created. Registers the permission activity launcher.
-     * @param savedInstanceState
+     * @param savedInstanceState Previous saved dynamic instance state of activity
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +102,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Called when the activity comes to the foreground in this state the user can interact with it.
+     */
     @Override
     protected void onResume() {
         super.onResume();

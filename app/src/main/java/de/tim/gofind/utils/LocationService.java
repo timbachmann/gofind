@@ -30,6 +30,9 @@ import de.tim.gofind.search.DataStorage;
 import de.tim.gofind.search.HistoricalImage;
 import de.tim.gofind.search.SearchActivity;
 
+/**
+ * TODO
+ */
 public class LocationService extends Service {
 
     public static final String BROADCAST_LOCATION = "LOCATION";
@@ -45,12 +48,22 @@ public class LocationService extends Service {
     private DataStorage dataStorage;
     private Intent intent;
 
+    /**
+     * TODO
+     */
     @Override
     public void onCreate() {
         super.onCreate();
         startServiceWithNotification();
     }
 
+    /**
+     * TODO
+     * @param intent
+     * @param flags
+     * @param startId
+     * @return
+     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent.getAction() != null && intent.getAction().equals(ACTION_START)) {
@@ -76,6 +89,9 @@ public class LocationService extends Service {
         return START_STICKY;
     }
 
+    /**
+     * TODO
+     */
     @Override
     public void onDestroy() {
         locationManager.removeUpdates(listener);
@@ -88,7 +104,9 @@ public class LocationService extends Service {
         return null;
     }
 
-
+    /**
+     * TODO
+     */
     void startServiceWithNotification() {
         if (isServiceRunning) return;
         isServiceRunning = true;
@@ -109,7 +127,10 @@ public class LocationService extends Service {
         startForeground(1, notification);
     }
 
-    void stopMyService() {
+    /**
+     * TODO
+     */
+    private void stopMyService() {
         isServiceRunning = false;
         stopForeground(true);
         stopSelf();
@@ -123,6 +144,12 @@ public class LocationService extends Service {
         return notificationIds;
     }
 
+    /**
+     * TODO
+     * @param location
+     * @param currentBestLocation
+     * @return
+     */
     protected boolean isBetterLocation(Location location, Location currentBestLocation) {
         if (currentBestLocation == null) {
             return true;
@@ -169,6 +196,13 @@ public class LocationService extends Service {
         return provider1.equals(provider2);
     }
 
+    /**
+     * TODO
+     * @param image
+     * @param id
+     * @param latitude
+     * @param longitude
+     */
     private void checkDistance(HistoricalImage image, int id, double latitude, double longitude) {
 
         int distance = (int) Utils.haversineDistance(image.getLatitude(), image.getLongitude(), latitude, longitude);
@@ -186,13 +220,23 @@ public class LocationService extends Service {
         }
     }
 
+    /**
+     * TODO
+     * @param image
+     * @param distance
+     * @param id
+     */
     public void notifyUser(HistoricalImage image, int distance, int id) {
+
+        if (image.getMarker() == null) {
+            return;
+        }
 
         Intent intent = new Intent(this, ARActivity.class);
         intent.putExtra("path", image.getTitle());
         intent.putExtra("lat", image.getLatitude());
         intent.putExtra("lon", image.getLongitude());
-        intent.putExtra("bearing", (int) image.getMarker().getTag());
+        intent.putExtra("bearing", image.getMarker().getTag() != null ? (int) image.getMarker().getTag() : 0);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
@@ -226,8 +270,15 @@ public class LocationService extends Service {
         });
     }
 
+    /**
+     * TODO
+     */
     class MyLocationListener implements LocationListener {
 
+        /**
+         * TODO
+         * @param loc
+         */
         public void onLocationChanged(final Location loc) {
             if (isBetterLocation(loc, previousBestLocation)) {
                 Log.i(TAG, "Location changed!");

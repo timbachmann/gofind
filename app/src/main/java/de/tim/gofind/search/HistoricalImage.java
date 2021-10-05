@@ -2,6 +2,9 @@ package de.tim.gofind.search;
 
 import com.google.android.gms.maps.model.Marker;
 
+/**
+ * TODO
+ */
 public class HistoricalImage {
 
     private String title;

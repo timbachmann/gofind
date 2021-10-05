@@ -24,6 +24,9 @@ import com.squareup.picasso.Target;
 
 import de.tim.gofind.R;
 
+/**
+ * TODO
+ */
 public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
     private final View mWindow;
     private static Marker lastMarker = null;
@@ -33,17 +36,30 @@ public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
         mWindow = layoutInflater.inflate(R.layout.custom_info_window, null);
     }
 
+    /**
+     * TODO
+     * @param marker
+     * @return
+     */
     @Override
     public View getInfoWindow(@NonNull Marker marker) {
         Picasso.get().load(marker.getSnippet()).placeholder(R.drawable.ic_twotone_image_24).into(mWindow.findViewById(R.id.badge), new MarkerCallback(marker));
         return mWindow;
     }
 
+    /**
+     * TODO
+     * @param marker
+     * @return
+     */
     @Override
     public View getInfoContents(@NonNull Marker marker) {
         return null;
     }
 
+    /**
+     * TODO
+     */
     private static class MarkerCallback implements Callback {
         Marker marker = null;
 

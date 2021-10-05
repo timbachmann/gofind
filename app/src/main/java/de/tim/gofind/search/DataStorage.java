@@ -2,6 +2,9 @@ package de.tim.gofind.search;
 
 import java.util.List;
 
+/**
+ * TODO
+ */
 public class DataStorage {
 
     private List<HistoricalImage> imageList = null;

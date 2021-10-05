@@ -17,10 +17,20 @@ import java.io.IOException;
 
 public class Utils {
 
+    public static final String BASE64_DATA_PREFIX = "data:image/png;base64,";
+
     public static double degreesToRadians(double angle) {
         return angle * (Math.PI / 180.0);
     }
 
+    /**
+     *
+     * @param lat1
+     * @param lon1
+     * @param lat2
+     * @param lon2
+     * @return
+     */
     public static double haversineDistance(double lat1, double lon1, double lat2, double lon2) {
         double R = 6371e3;
         double phi1 = degreesToRadians(lat1);
@@ -34,6 +44,14 @@ public class Utils {
         return R * c;
     }
 
+    /**
+     *
+     * @param targetLat
+     * @param targetLon
+     * @param currentLat
+     * @param currentLon
+     * @return
+     */
     public static double calculateHeadingAngle(double targetLat, double targetLon, double currentLat, double currentLon) {
         double currentLatitudeRadians = Math.toRadians(currentLat);
         double destinationLatitudeRadians = Math.toRadians(targetLat);
@@ -47,13 +65,24 @@ public class Utils {
         return (headingAngle + 360) % 360;
     }
 
+    /**
+     *
+     * @param bitmap
+     * @return
+     */
     public static String toBase64(Bitmap bitmap) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
 
-        return Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT);
+        return BASE64_DATA_PREFIX + Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP);
     }
 
+    /**
+     *
+     * @param selectedFileUri
+     * @param contentResolver
+     * @return
+     */
     public static Bitmap uriToBitmap(Uri selectedFileUri, ContentResolver contentResolver) {
         try {
             ParcelFileDescriptor parcelFileDescriptor =

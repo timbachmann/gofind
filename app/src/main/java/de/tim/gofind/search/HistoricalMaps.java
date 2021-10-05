@@ -2,6 +2,9 @@ package de.tim.gofind.search;
 
 import java.util.ArrayList;
 
+/**
+ * TODO
+ */
 public class HistoricalMaps {
 
     public static final HistoricalMap MERIAN1615 = new HistoricalMap("Merian 1615", "https://www.basler-bauten.ch/images/stadtplaene/MerianKupfer1615.jpg");

@@ -302,7 +302,6 @@ public class SessionApi {
   }
   /**
   * Extract new item
-  * TODO
    * @param extractionContainerMessage 
    * @return SessionState
   */
@@ -360,7 +359,6 @@ public class SessionApi {
 
       /**
    * Extract new item
-   * TODO
    * @param extractionContainerMessage 
   */
   public void extractItem (ExtractionContainerMessage extractionContainerMessage, final Response.Listener<SessionState> responseListener, final Response.ErrorListener errorListener) {
