@@ -23,6 +23,7 @@ public class SearchListAdapter extends ArrayAdapter<HistoricalImage> {
         super(inflater.getContext(), R.layout.list_item, historicalImageList);
         this.inflater = inflater;
         this.historicalImageList = historicalImageList;
+        historicalImageList.get(0).print();
     }
 
     /**

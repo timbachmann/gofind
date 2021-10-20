@@ -9,6 +9,14 @@
     <string name="upper_time_bound">2030</string>
     <string name="image">Image</string>
     <string name="image_path">Image Path</string>
+    <string name="base_path">Change Cineast Path</string>
     <string name="search">Search</string>
+    <string name="details">Details</string>
+    <string name="list">List</string>
+    <string name="cancel">Cancel</string>
+    <string name="apply">Apply</string>
+    <string name="background_loc">Background Location Permission</string>
+    <string name="shared_preferences_key">GOFINDSHAREDPREFERENCES</string>
+    <string name="shared_preferences_cineast_path">http://city-stories.dmi.unibas.ch:5555</string>
     <string name="notification_channel">Location Background Service</string>
 </resources>

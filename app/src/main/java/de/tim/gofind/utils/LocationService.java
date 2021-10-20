@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
@@ -14,6 +15,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
@@ -23,6 +25,9 @@ import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import de.tim.gofind.R;
 import de.tim.gofind.ar.ARActivity;
@@ -45,7 +50,7 @@ public class LocationService extends Service {
     private LocationManager locationManager;
     private MyLocationListener listener;
     private Location previousBestLocation = null;
-    private DataStorage dataStorage;
+    private SharedPreferences sharedPref;
     private Intent intent;
 
     /**
@@ -73,8 +78,8 @@ public class LocationService extends Service {
         }
 
         instance = this;
-        dataStorage = DataStorage.getInstance() == null ? new DataStorage() : DataStorage.getInstance();
         this.intent = new Intent(BROADCAST_LOCATION);
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         listener = new MyLocationListener();
@@ -233,10 +238,7 @@ public class LocationService extends Service {
         }
 
         Intent intent = new Intent(this, ARActivity.class);
-        intent.putExtra("path", image.getTitle());
-        intent.putExtra("lat", image.getLatitude());
-        intent.putExtra("lon", image.getLongitude());
-        intent.putExtra("bearing", image.getMarker().getTag() != null ? (int) image.getMarker().getTag() : 0);
+        intent.putExtra("image", image.serialize());
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
@@ -284,8 +286,11 @@ public class LocationService extends Service {
                 Log.i(TAG, "Location changed!");
                 previousBestLocation = loc;
                 int id = 2;
-                if (dataStorage.getImageList() != null) {
-                    for (HistoricalImage image : dataStorage.getImageList()) {
+
+                Set<String> serializedImages = sharedPref.getStringSet(getString(R.string.shared_preferences_key), null);
+                if (serializedImages != null) {
+                    List<HistoricalImage> imageList = serializedImages.stream().map(HistoricalImage::new).collect(Collectors.toList());
+                    for (HistoricalImage image : imageList) {
                         checkDistance(image, id, loc.getLatitude(), loc.getLongitude());
                         id++;
                     }

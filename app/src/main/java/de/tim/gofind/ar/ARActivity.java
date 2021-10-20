@@ -2,19 +2,33 @@ package de.tim.gofind.ar;
 
 import static android.content.ContentValues.TAG;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.media.Image;
+import android.net.LinkAddress;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.util.Log;
+import android.view.DragEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.slider.RangeSlider;
 import com.google.android.material.slider.Slider;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Pose;
@@ -31,8 +45,15 @@ import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import de.tim.gofind.R;
 import de.tim.gofind.databinding.ActivityArBinding;
+import de.tim.gofind.search.HistoricalImage;
 import de.tim.gofind.utils.LocationService;
 import de.tim.gofind.utils.OrientationService;
 import de.tim.gofind.utils.Utils;
@@ -56,17 +77,24 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
     private double targetLat;
     private double targetLon;
     private int bearing;
+    private String serializedHistoricalImage;
+    private HistoricalImage historicalImage;
     private double azimuthToTarget;
     private ImageView arrowView;
     private ImageView overlayView;
     private FloatingActionButton overlayFab;
+    private FloatingActionButton detailsFab;
     private Slider overlaySlider;
     private boolean imageDrawn = false;
     private boolean overlayViewEnabled = false;
-    private final String BASE_PATH = "http://city-stories.dmi.unibas.ch:5555/objects/%s";
+    private String fullPath;
+    private LinearLayout bottomSheet;
+    private ConstraintLayout overlayLayout;
+    private ArrayList<HistoricalImage> imageObjectList;
+    private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
+    private final String BASE_PATH = "/objects/%s";
 
     /**
-     *
      * @param savedInstanceState
      */
     @Override
@@ -78,11 +106,61 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
 
         Intent intent = getIntent();
         ImageView arImageView = new ImageView(getApplicationContext());
-        String imagePath = intent.getStringExtra("path");
-        String fullPath = String.format(BASE_PATH, imagePath);
-        targetLat = intent.getDoubleExtra("lat", 0);
-        targetLon = intent.getDoubleExtra("lon", 0);
-        bearing = intent.getIntExtra("bearing", 0);
+        serializedHistoricalImage = intent.getStringExtra("image");
+        historicalImage = new HistoricalImage(serializedHistoricalImage);
+        targetLat = historicalImage.getLatitude();
+        targetLon = historicalImage.getLongitude();
+
+        SharedPreferences sharedPref = getSharedPreferences("GoFind", Context.MODE_PRIVATE);
+        String path = sharedPref.getString(getString(R.string.shared_preferences_cineast_path), getResources().getString(R.string.shared_preferences_cineast_path));
+        fullPath = String.format(path + BASE_PATH, historicalImage.getObjectID());
+
+        imageObjectList = new ArrayList<>();
+        overlayLayout = findViewById(R.id.overlay_layout);
+
+        SharedPreferences sharedPrefs = getSharedPreferences("GoFind", Context.MODE_PRIVATE);
+        Set<String> serializedImages = sharedPrefs.getStringSet(getString(R.string.shared_preferences_key), null);
+        if (serializedImages != null) {
+            int i = 9;
+            LinearLayout linearLayout = new LinearLayout(this);
+            linearLayout.setVisibility(View.GONE);
+            linearLayout.setOrientation(LinearLayout.VERTICAL);
+            overlayLayout.addView(linearLayout, 8, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            List<HistoricalImage> imageList = serializedImages.stream().map(HistoricalImage::new).collect(Collectors.toList());
+            for (HistoricalImage image : imageList) {
+                if (!image.getObjectID().equals(historicalImage.getObjectID())
+                        && Utils.haversineDistance(image.getLatitude(),
+                        image.getLongitude(), historicalImage.getLatitude(),
+                        historicalImage.getLongitude()) < 30) {
+                    imageObjectList.add(historicalImage);
+                    ImageView imageView = new ImageView(getApplicationContext());
+                    imageView.setVisibility(View.GONE);
+                    imageView.setAlpha(0.0f);
+                    Picasso.get().load(String.format(path + BASE_PATH, image.getObjectID())).placeholder(R.drawable.ic_twotone_image_24).into(imageView);
+                    overlayLayout.addView(imageView, i, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                    Slider slider = new Slider(this);
+                    slider.setVisibility(View.VISIBLE);
+                    linearLayout.addView(slider);
+                    slider.setValueFrom(0.0f);
+                    slider.setValue(0.0f);
+                    slider.setValueTo(1.0f);
+                    slider.addOnChangeListener((lambdaSlider, value, fromUser) -> imageView.setAlpha(value));
+                    i++;
+                }
+            }
+        }
+
+        bottomSheet = findViewById(R.id.bottom_details_container);
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+        bottomSheetBehavior.setPeekHeight(0);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        bottomSheet.setVisibility(View.INVISIBLE);
+
+        ImageView detailsImage = findViewById(R.id.details_icon);
+        TextView detailsTitle = findViewById(R.id.details_title);
+        TextView detailsDistance = findViewById(R.id.details_distance);
+        TextView detailsDate = findViewById(R.id.details_date);
+        TextView detailsSource = findViewById(R.id.details_source);
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.ux_fragment);
         orientationText = findViewById(R.id.orientation_text);
         targetText = findViewById(R.id.target_text);
@@ -90,18 +168,42 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
         overlayView = findViewById(R.id.overlay_image);
         overlaySlider = findViewById(R.id.overlay_slider);
         overlayFab = findViewById(R.id.overlay_fab);
+        detailsFab = findViewById(R.id.details_fab);
+        Toolbar detailsBar = findViewById(R.id.details_toolbar);
         startLocationServiceAndBind();
 
         arFragment.getArSceneView().getScene().addOnUpdateListener(this);
 
-        Picasso.get().load(fullPath).into(overlayView);
-        Picasso.get().load(fullPath).into(arImageView);
+        Picasso.get().load(fullPath).placeholder(R.drawable.ic_twotone_image_24).into(overlayView);
+        Picasso.get().load(fullPath).placeholder(R.drawable.ic_twotone_image_24).into(arImageView);
+        Picasso.get().load(fullPath).placeholder(R.drawable.ic_twotone_image_24).into(detailsImage);
+
+        detailsTitle.setText(historicalImage.getTitle());
+        detailsDistance.setText(String.format("%sm", historicalImage.getDistance()));
+        detailsDate.setText(historicalImage.getDate());
+        detailsSource.setText(historicalImage.getSource());
+
+        detailsBar.setOnClickListener(view -> {
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            bottomSheet.setVisibility(View.INVISIBLE);
+        });
 
         ViewRenderable.builder().setView(this, arImageView).build().thenAccept(renderable -> testViewRenderable = renderable);
 
-        overlayView.setAlpha(0.5f);
+
         overlayFab.setOnClickListener(view -> onOverlayFabClick());
         overlaySlider.addOnChangeListener((slider, value, fromUser) -> overlayView.setAlpha(value));
+
+        detailsFab.setOnClickListener(view -> {
+            if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+                bottomSheet.setVisibility(View.INVISIBLE);
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            } else {
+                bottomSheet.setVisibility(View.VISIBLE);
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+            }
+        });
+
     }
 
     /**
@@ -116,6 +218,9 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
             orientationText.setVisibility(View.INVISIBLE);
             overlayFab.setImageResource(R.drawable.ic_baseline_center_focus_weak_24);
             arFragment.getPlaneDiscoveryController().hide();
+            for (int i = 8; i < 8 + imageObjectList.size() + 1; i++) {
+                overlayLayout.getChildAt(i).setVisibility(View.VISIBLE);
+            }
             overlayViewEnabled = true;
         } else {
             overlayView.setVisibility(View.GONE);
@@ -125,12 +230,14 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
             orientationText.setVisibility(View.VISIBLE);
             arFragment.getPlaneDiscoveryController().show();
             overlayFab.setImageResource(R.drawable.ic_baseline_image_24);
+            for (int i = 8; i < 8 + imageObjectList.size() + 1; i++) {
+                overlayLayout.getChildAt(i).setVisibility(View.GONE);
+            }
             overlayViewEnabled = false;
         }
     }
 
     /**
-     *
      * @param frameTime
      */
     @Override
@@ -225,7 +332,6 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
     private class LocationOrientationReceiver extends BroadcastReceiver {
 
         /**
-         *
          * @param context
          * @param intent
          */
@@ -237,11 +343,10 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
                 if (orientation < 0) {
                     orientation = 360 - Math.abs(orientation);
                 }
-                orientationText.setText(String.valueOf((int) orientation));
+                orientationText.setText("Current: " + (int) orientation + "°");
                 if (longitude != 0 && latitude != 0) {
                     azimuthToTarget = Utils.calculateHeadingAngle(targetLat, targetLon, latitude, longitude);
-
-                    targetText.setText(String.valueOf((int) azimuthToTarget));
+                    targetText.setText("Target: " + (int) azimuthToTarget + "°");
                 }
             } else if (action.equals(LocationService.BROADCAST_LOCATION)) {
                 latitude = intent.getDoubleExtra("Latitude", 0);

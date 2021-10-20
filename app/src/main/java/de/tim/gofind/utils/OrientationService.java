@@ -12,7 +12,6 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.WindowManager;
 
-import de.tim.gofind.search.DataStorage;
 
 /**
  * TODO
@@ -29,7 +28,6 @@ public class OrientationService extends Service implements SensorEventListener {
     @Override
     public void onCreate() {
         super.onCreate();
-        new DataStorage();
         intent = new Intent(BROADCAST_ORIENTATION);
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -97,7 +95,6 @@ public class OrientationService extends Service implements SensorEventListener {
 
         double finalOrientation = ((float) Math.toDegrees(orientation[0]) + 360f) % 360f;
         intent.putExtra("orientation", finalOrientation);
-        System.out.println(finalOrientation);
         sendBroadcast(intent);
     }
 

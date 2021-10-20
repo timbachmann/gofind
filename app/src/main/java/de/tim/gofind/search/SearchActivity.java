@@ -16,8 +16,10 @@ import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
@@ -32,6 +34,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.AdapterView;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -93,6 +96,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -158,12 +162,13 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
     private MenuItem backgroundLocationPermission;
     private static final int RESULT_LOAD_IMAGE = 123;
     public static final int IMAGE_CAPTURE_CODE = 654;
-    private final String thumbnailBasePath = "http://city-stories.dmi.unibas.ch:5555/thumbnails/%s";
+    private final String thumbnailBasePath = "/thumbnails/%s";
     private ActivityResultLauncher<String> permissionActivityResultLauncher;
 
     /**
      * Called when the activity is first created. Registers the permission activity launcher for
      * ACCESS_BACKGROUND_LOCATION and initiates setup process.
+     *
      * @param savedInstanceState Previous saved dynamic instance state of activity
      */
     @Override
@@ -225,6 +230,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     /**
      * Assigns all views to their variables and creates rounded toolbar.
+     *
      * @param savedInstanceState Previous saved dynamic instance state of activity
      */
     private void initializeViews(Bundle savedInstanceState) {
@@ -348,6 +354,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     /**
      * Click listener for HistoricalMapsDialog, loading and displaying the historical maps.
+     *
      * @param position Position of historical map in dialog.
      */
     private void onHistoricalMapsDialogClick(int position) {
@@ -403,9 +410,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
     /**
      * Called after an image was taken or loaded from camera roll.
      * Sets the image for new cineast request and displays it in the {@link de.tim.gofind.R.layout#filter_panel}
+     *
      * @param requestCode Code of the original request (RESULT_LOAD_IMAGE/IMAGE_CAPTURE_CODE)
-     * @param resultCode Code if the loading process was successful
-     * @param data Data Intent of result
+     * @param resultCode  Code if the loading process was successful
+     * @param data        Data Intent of result
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -426,6 +434,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     /**
      * Called when the system UI mode changes, restarts Map {@link #mMap} to apply new mode to Map.
+     *
      * @param newConfig
      */
     @Override
@@ -451,6 +460,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     /**
      * Method to draw a circle on {@link #mMap} with radius {@link #VIEW_DISTANCE}
+     *
      * @param point Center point of circle
      */
     private void drawCircle(LatLng point) {
@@ -520,13 +530,18 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
         Response.Listener<SimilarityQueryResultBatch> resultBatchListener = this::handleSimilarityQueryResult;
 
+        SharedPreferences sharedPref = getSharedPreferences("GoFind", Context.MODE_PRIVATE);
+        String path = sharedPref.getString(getString(R.string.shared_preferences_cineast_path), getResources().getString(R.string.shared_preferences_cineast_path));
+
         SegmentsApi segmentsApi = new SegmentsApi();
+        segmentsApi.setBasePath(path);
         segmentsApi.findSegmentSimilar(similarityQuery, resultBatchListener, this);
 
     }
 
     /**
      * Called when SimilarityQueryResultBatch is received
+     *
      * @param response
      */
     private void handleSimilarityQueryResult(SimilarityQueryResultBatch response) {
@@ -551,12 +566,16 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         IdList idList = new IdList();
         idList.setIds(keyList);
         Response.Listener<MediaSegmentQueryResult> segmentQueryResultListener = this::handleMediaSegmentQueryResult;
+        SharedPreferences sharedPref = getSharedPreferences("GoFind", Context.MODE_PRIVATE);
+        String path = sharedPref.getString(getString(R.string.shared_preferences_cineast_path), getResources().getString(R.string.shared_preferences_cineast_path));
         SegmentApi segmentApi = new SegmentApi();
+        segmentApi.setBasePath(path);
         segmentApi.findSegmentByIdBatched(idList, segmentQueryResultListener, this);
     }
 
     /**
      * TODO
+     *
      * @param mediaSegmentQueryResult
      */
     private void handleMediaSegmentQueryResult(MediaSegmentQueryResult mediaSegmentQueryResult) {
@@ -577,16 +596,24 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
         Response.Listener<MediaObjectQueryResult> objectQueryResultListener = this::handleMediaObjectQueryResult;
 
+        SharedPreferences sharedPref = getSharedPreferences("GoFind", Context.MODE_PRIVATE);
+        String path = sharedPref.getString(getString(R.string.shared_preferences_cineast_path), getResources().getString(R.string.shared_preferences_cineast_path));
+
         ObjectApi objectApi = new ObjectApi();
+        objectApi.setBasePath(path);
         objectApi.findObjectsByIdBatched(objectIdList, objectQueryResultListener, this);
     }
 
     /**
      * TODO
+     *
      * @param mediaObjectQueryResult
      */
     private void handleMediaObjectQueryResult(MediaObjectQueryResult mediaObjectQueryResult) {
         List<String> objectList = new ArrayList<>();
+        SharedPreferences sharedPref = getSharedPreferences("GoFind", Context.MODE_PRIVATE);
+        String path = sharedPref.getString(getString(R.string.shared_preferences_cineast_path), getResources().getString(R.string.shared_preferences_cineast_path));
+
         for (MediaObjectDescriptor objectDescriptor : mediaObjectQueryResult.getContent()) {
             objectList.add(objectDescriptor.getObjectId());
 
@@ -594,7 +621,8 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                 HistoricalImage currentImage = imageMap.get(objectDescriptor.getObjectId());
                 assert currentImage != null;
                 currentImage.setTitle(objectDescriptor.getName());
-                currentImage.setPath(String.format(thumbnailBasePath, currentImage.getSegmentID()));
+
+                currentImage.setPath(String.format(path + thumbnailBasePath, currentImage.getSegmentID()));
             }
         }
 
@@ -602,6 +630,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         objectIdList.setIds(objectList);
 
         MetadataApi metadataApi = new MetadataApi();
+        metadataApi.setBasePath(path);
 
         Response.Listener<MediaObjectMetadataQueryResult> objectMetadataQueryResultListener = this::handleMediaObjectMetadataQueryResult;
 
@@ -610,6 +639,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     /**
      * TODO
+     *
      * @param mediaObjectMetadataQueryResult
      */
     private void handleMediaObjectMetadataQueryResult(MediaObjectMetadataQueryResult mediaObjectMetadataQueryResult) {
@@ -659,11 +689,34 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                 historicalImage.setDistance((int) Utils.haversineDistance(searchedLat, searchedLon, historicalImage.getLatitude(), historicalImage.getLongitude()));
             }
         }
-        DataStorage.getInstance().setImageList(toOrder.stream().sorted(Comparator.comparing(HistoricalImage::getDistance)).collect(Collectors.toList()));
-        SearchListAdapter adapter = new SearchListAdapter(getLayoutInflater(), DataStorage.getInstance().getImageList());
+        Set<String> serializedImageSet = toOrder.stream().sorted(Comparator.comparing(HistoricalImage::getDistance)).map(HistoricalImage::serialize).collect(Collectors.toSet());
+        SharedPreferences sharedPref = getSharedPreferences("GoFind", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putStringSet(getString(R.string.shared_preferences_key), serializedImageSet);
+        editor.apply();
+        SearchListAdapter adapter = new SearchListAdapter(getLayoutInflater(), serializedImageSet.stream().map(HistoricalImage::new).collect(Collectors.toList()));
+        listView.setOnItemClickListener((adapterView, view, i, l) -> onResultListItemClick(i));
         listView.setAdapter(adapter);
 
         displayMarkersOnMap();
+    }
+
+    private void onResultListItemClick(int i) {
+        SharedPreferences sharedPref = getSharedPreferences("GoFind", Context.MODE_PRIVATE);
+        Set<String> serializedImages = sharedPref.getStringSet(getString(R.string.shared_preferences_key), null);
+        if (serializedImages != null) {
+            List<HistoricalImage> imageList = serializedImages.stream().map(HistoricalImage::new).collect(Collectors.toList());
+            HistoricalImage image = imageList.get(i);
+            if ((int) Utils.haversineDistance(latitude, longitude,
+                    image.getLatitude(), image.getLongitude())
+                    < getResources().getInteger(R.integer.ar_distance)) {
+                Intent intent = new Intent(this, ARActivity.class);
+                intent.putExtra("image", image.serialize());
+                startActivity(intent);
+            } else {
+                Toast.makeText(this, "Too far away! Get closer!", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     /**
@@ -679,10 +732,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                             marker.getPosition().latitude, marker.getPosition().longitude)
                             < getResources().getInteger(R.integer.ar_distance)) {
                         Intent intent = new Intent(this, ARActivity.class);
-                        intent.putExtra("path", marker.getTitle());
-                        intent.putExtra("lat", marker.getPosition().latitude);
-                        intent.putExtra("lon", marker.getPosition().longitude);
-                        intent.putExtra("bearing", (int) marker.getTag());
+                        intent.putExtra("image", marker.getTitle());
                         startActivity(intent);
                     } else {
                         Toast.makeText(this, "Too far away! Get closer!", Toast.LENGTH_LONG).show();
@@ -690,14 +740,17 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                 }
             });
 
-            if (DataStorage.getInstance().getImageList() != null) {
-                for (HistoricalImage image : DataStorage.getInstance().getImageList()) {
+            SharedPreferences sharedPref = getSharedPreferences("GoFind", Context.MODE_PRIVATE);
+            Set<String> serializedImages = sharedPref.getStringSet(getString(R.string.shared_preferences_key), null);
+            if (serializedImages != null) {
+                List<HistoricalImage> imageList = serializedImages.stream().map(HistoricalImage::new).collect(Collectors.toList());
+                for (HistoricalImage image : imageList) {
                     LatLng latLng = new LatLng(image.getLatitude(), image.getLongitude());
                     if (image.getDistance() <= VIEW_DISTANCE || !spacialQuery) {
                         Marker marker = mMap.addMarker(new MarkerOptions().position(latLng)
-                                .title(image.getObjectID()).snippet(image.getPath()));
+                                .title(image.serialize()).snippet(image.getPath()));
                         assert marker != null;
-                        marker.setTag(image.getBearing());
+                        marker.setTag(image.getObjectID());
                         image.setMarker(marker);
                     }
                 }
@@ -710,6 +763,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     /**
      * TODO
+     *
      * @param googleMap
      */
     @SuppressLint("ResourceType")
@@ -766,12 +820,13 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     /**
      * TODO
+     *
      * @param error
      */
     @Override
     public void onErrorResponse(VolleyError error) {
         Toast.makeText(getApplicationContext(), error.toString(), Toast.LENGTH_LONG).show();
-        Log.e(TAG,error.toString());
+        Log.e(TAG, error.toString());
     }
 
     /**
@@ -819,6 +874,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     /**
      * TODO
+     *
      * @param menu
      * @return
      */
@@ -849,6 +905,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     /**
      * TODO
+     *
      * @return
      */
     private boolean hasBackgroundLocationPermission() {
@@ -862,6 +919,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     /**
      * TODO
+     *
      * @param item
      * @return
      */
@@ -895,6 +953,25 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                     askBackgroundLocationPermission();
                 }
                 return true;
+            case R.id.base_path:
+                SharedPreferences sharedPref = getSharedPreferences("GoFind", Context.MODE_PRIVATE);
+                String path = sharedPref.getString(getString(R.string.shared_preferences_cineast_path), getResources().getString(R.string.shared_preferences_cineast_path));
+
+                final EditText edittext = new EditText(this);
+                edittext.setText(path);
+                edittext.setPadding(16, 16, 16, 16);
+
+                new MaterialAlertDialogBuilder(SearchActivity.this, R.style.ThemeOverlay_App_MaterialAlertDialog)
+                        .setTitle(getResources().getString(R.string.base_path))
+                        .setView(edittext)
+                        .setNeutralButton(getResources().getString(R.string.cancel), (dialogInterface, i) -> {
+
+                        }).setPositiveButton(getResources().getString(R.string.apply), (dialogInterface, i) -> {
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString(getString(R.string.shared_preferences_cineast_path), edittext.getText().toString());
+                    editor.apply();
+                }).show();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -907,6 +984,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
         /**
          * TODO
+         *
          * @param context
          * @param intent
          */
