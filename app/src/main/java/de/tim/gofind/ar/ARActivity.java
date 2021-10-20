@@ -2,7 +2,6 @@ package de.tim.gofind.ar;
 
 import static android.content.ContentValues.TAG;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -12,23 +11,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.media.Image;
-import android.net.LinkAddress;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.util.Log;
-import android.view.DragEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.slider.RangeSlider;
 import com.google.android.material.slider.Slider;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Pose;
@@ -47,7 +38,6 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -110,6 +100,7 @@ public class ARActivity extends AppCompatActivity implements Scene.OnUpdateListe
         historicalImage = new HistoricalImage(serializedHistoricalImage);
         targetLat = historicalImage.getLatitude();
         targetLon = historicalImage.getLongitude();
+        bearing = historicalImage.getBearing();
 
         SharedPreferences sharedPref = getSharedPreferences("GoFind", Context.MODE_PRIVATE);
         String path = sharedPref.getString(getString(R.string.shared_preferences_cineast_path), getResources().getString(R.string.shared_preferences_cineast_path));
